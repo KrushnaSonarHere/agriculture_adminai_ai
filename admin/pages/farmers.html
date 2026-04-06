@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmers — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+      <div>
+        <div class="page-heading">Farmers Registry</div>
+        <div class="page-sub">All registered farmers in the system</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="exportFarmers()">⬇ Export CSV</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="admin-card" style="padding:0;margin-bottom:16px;">
+      <div class="filters-bar">
+        <div class="filter-search" style="flex:2;">
+          <span>🔍</span>
+          <input type="text" id="farmer-search" placeholder="Search by name, ID, mobile..." oninput="filterFarmers()">
+        </div>
+        <select class="filter-select" id="filter-district" onchange="filterFarmers()">
+          <option value="">All Districts</option>
+          <option>Nashik</option><option>Pune</option><option>Nagpur</option>
+          <option>Aurangabad</option><option>Solapur</option><option>Kolhapur</option>
+        </select>
+        <select class="filter-select" id="filter-profile" onchange="filterFarmers()">
+          <option value="">All Profiles</option>
+          <option value="true">Complete</option>
+          <option value="false">Incomplete</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="admin-card" style="padding:0;">
+      <div class="table-header">
+        <span class="table-header-title">Farmers <span id="farmer-count" style="font-weight:400;color:var(--text3);font-size:12px;margin-left:6px;"></span></span>
+        <span id="farmer-show" style="font-size:12px;color:var(--text3);"></span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Farmer</th>
+              <th>Farmer ID</th>
+              <th>Mobile</th>
+              <th>District</th>
+              <th>Profile</th>
+              <th>Registered At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="farmer-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="farmer-page-info">—</span>
+        <div class="page-btns" id="farmer-page-btns"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Farmer Detail Modal -->
+<div class="modal-overlay" id="farmer-modal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head">
+      <span id="fm-title">Farmer Details</span>
+      <span class="modal-close" onclick="closeFarmerModal()">✕</span>
+    </div>
+    <div class="modal-body" id="fm-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeFarmerModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('farmers');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+let allFarmers = [];
+let filtered   = [];
+let page = 1;
+const PER = 15;
+
+// Demo fallback
+const DEMO = [
+  { id:1, full_name:'Ramesh Kumar',  farmer_id:'KID-MH-2026-00101', mobile:'9876543210', district:'Nashik',     profile_complete:true,  created_at:'2026-01-15T09:00:00', email:'ramesh@example.com' },
+  { id:2, full_name:'Sunita Devi',   farmer_id:'KID-MH-2026-00102', mobile:'9123456789', district:'Pune',       profile_complete:true,  created_at:'2026-01-20T10:30:00', email:'sunita@example.com' },
+  { id:3, full_name:'Vijay Singh',   farmer_id:'KID-MH-2026-00103', mobile:'9988776655', district:'Nagpur',     profile_complete:false, created_at:'2026-02-01T08:00:00', email:'vijay@example.com' },
+  { id:4, full_name:'Lakshmi Patel', farmer_id:'KID-MH-2026-00104', mobile:'9871234567', district:'Kolhapur',   profile_complete:true,  created_at:'2026-02-10T11:00:00', email:'lakshmi@example.com' },
+  { id:5, full_name:'Mohan Reddy',   farmer_id:'KID-MH-2026-00105', mobile:'9765432100', district:'Solapur',    profile_complete:false, created_at:'2026-02-15T14:00:00', email:'mohan@example.com' },
+  { id:6, full_name:'Geeta Sharma',  farmer_id:'KID-MH-2026-00106', mobile:'9654321098', district:'Aurangabad', profile_complete:true,  created_at:'2026-03-01T09:30:00', email:'geeta@example.com' },
+  { id:7, full_name:'Ravi Tiwari',   farmer_id:'KID-MH-2026-00107', mobile:'9543210987', district:'Nashik',     profile_complete:true,  created_at:'2026-03-10T10:00:00', email:'ravi@example.com' },
+  { id:8, full_name:'Anjali Desai',  farmer_id:'KID-MH-2026-00108', mobile:'9432109876', district:'Pune',       profile_complete:false, created_at:'2026-03-15T16:00:00', email:'anjali@example.com' },
+];
+
+async function loadFarmers() {
+  // Show demo data immediately
+  allFarmers = DEMO;
+  filtered = [...allFarmers];
+  renderFarmers();
+  // Try real API in background
+  try {
+    const resp = await fetch(`${API}/farmers/`);
+    if (resp.ok) {
+      const data = await resp.json();
+      const farmers = data.filter(u => u.role !== 'admin');
+      if (farmers.length > 0) {
+        allFarmers = farmers;
+        filtered = [...allFarmers];
+        renderFarmers();
+      }
+    }
+  } catch { /* keep demo data */ }
+}
+
+function filterFarmers() {
+  const q  = document.getElementById('farmer-search').value.toLowerCase();
+  const d  = document.getElementById('filter-district').value;
+  const pr = document.getElementById('filter-profile').value;
+  filtered = allFarmers.filter(f => {
+    const mq  = !q  || [f.full_name,f.farmer_id,f.mobile,f.email].join(' ').toLowerCase().includes(q);
+    const md  = !d  || (f.district||'') === d;
+    const mpr = pr==='' || String(f.profile_complete) === pr;
+    return mq && md && mpr;
+  });
+  page = 1;
+  renderFarmers();
+}
+
+function renderFarmers() {
+  const start = (page-1)*PER;
+  const pg    = filtered.slice(start, start+PER);
+  document.getElementById('farmer-count').textContent = `(${filtered.length})`;
+  document.getElementById('farmer-show').textContent  = `Showing ${filtered.length} of ${allFarmers.length}`;
+  document.getElementById('farmer-page-info').textContent = `${start+1}–${Math.min(start+PER,filtered.length)} of ${filtered.length}`;
+
+  document.getElementById('farmer-tbody').innerHTML = pg.map(f => {
+    const initials = f.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const date     = f.created_at ? new Date(f.created_at).toLocaleDateString('en-IN') : '—';
+    const profile  = f.profile_complete
+      ? `<span class="badge badge-approved">Complete</span>`
+      : `<span class="badge badge-pending">Incomplete</span>`;
+    return `<tr>
+      <td style="display:flex;align-items:center;gap:10px;">
+        <div class="farmer-avatar">${initials}</div>
+        <div>
+          <div class="farmer-name">${f.full_name}</div>
+          <div class="farmer-id">${f.email||'—'}</div>
+        </div>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue);">${f.farmer_id||'—'}</td>
+      <td>+91 ${f.mobile||'—'}</td>
+      <td>${f.district||'—'}</td>
+      <td>${profile}</td>
+      <td style="color:var(--text3);">${date}</td>
+      <td>
+        <button class="btn-icon" title="View" onclick="viewFarmer(${f.id})">👁</button>
+        <a href="../frontend/pages/profile.html" class="btn-icon" title="Profile" style="display:inline-flex;text-decoration:none;">🔗</a>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const total = Math.ceil(filtered.length/PER);
+  document.getElementById('farmer-page-btns').innerHTML =
+    Array.from({length:total},(_,i)=>i+1).map(i=>
+      `<button class="page-btn ${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`
+    ).join('');
+}
+function goPage(p) { page=p; renderFarmers(); }
+
+async function viewFarmer(id) {
+  let data;
+  try { data = await fetch(`${API}/farmers/profile/${id}`).then(r=>r.json()); }
+  catch { data = allFarmers.find(f=>f.id===id)||{}; }
+  const p = data.profile || {};
+  document.getElementById('fm-title').textContent = data.full_name || 'Farmer Details';
+  document.getElementById('fm-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+      ${[['Farmer ID',data.farmer_id],['Email',data.email],['Mobile','+91 '+data.mobile],['District',data.district],['State',data.state],['Aadhaar',p.aadhaar?'XXXX XXXX '+p.aadhaar.slice(-4):'—'],['Bank Account',p.bank_account?'••••'+p.bank_account.slice(-4):'—'],['IFSC',p.ifsc||'—'],['Land Area',p.land_area||'—'],['Crop Type',p.crop_type||'—'],['Irrigation',p.irrigation_type||'—'],['Category',p.caste_category||'—']].map(([l,v])=>`
+        <div style="padding:10px;background:var(--bg);border-radius:8px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:2px;">${l}</div>
+          <div style="font-weight:600;">${v||'—'}</div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('farmer-modal').classList.add('open');
+}
+function closeFarmerModal() { document.getElementById('farmer-modal').classList.remove('open'); }
+
+function exportFarmers() {
+  const rows = filtered.map(f=>[f.farmer_id,f.full_name,f.mobile,f.district,f.profile_complete].join(','));
+  const csv  = ['Farmer ID,Name,Mobile,District,Profile Complete',...rows].join('\n');
+  const a    = Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'farmers.csv'});
+  a.click();
+}
+
+loadFarmers();
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Verification — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+<style>
+/* ── Layout ── */
+.admin-content { padding: 0 !important; }
+.dv-topbar { padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.dv-layout { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 112px); }
+.dv-left   { background: var(--white); border-right: 1px solid var(--border); overflow-y: auto; }
+.dv-right  { background: var(--bg); overflow-y: auto; }
+
+/* ── Left Panel ── */
+.left-header { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.left-search { width:100%; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; margin-top:8px; outline:none; }
+.left-search:focus { border-color:var(--primary); }
+.doc-list-item {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s;
+}
+.doc-list-item:hover { background: var(--bg); }
+.doc-list-item.active { background: #EEF4FE; border-left: 3px solid var(--blue, #1565C0); }
+.dli-name  { font-size: 13px; font-weight: 700; color: var(--text); }
+.dli-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.dli-badges { display:flex; gap:6px; margin-top:5px; flex-wrap:wrap; }
+.badge-score { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.score-high { background:#E8F5E9; color:#2E7D32; }
+.score-mid  { background:#FFF3E0; color:#E65100; }
+.score-low  { background:#FFEBEE; color:#C62828; }
+.badge-status { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.st-approved { background:#E8F5E9; color:#2E7D32; }
+.st-review   { background:#FFF3E0; color:#E65100; }
+.st-flagged  { background:#FFEBEE; color:#C62828; }
+.st-pending  { background:#EEF4FE; color:#1565C0; }
+.badge-dup { background:#FCE4EC; color:#880E4F; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+
+/* ── Right Panel ── */
+.dv-right-inner { padding: 20px 24px; }
+
+/* ── Score gauge ── */
+.score-gauge-row { display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+.score-gauge-card {
+  flex:1; min-width:140px;
+  background:#fff; border:1.5px solid var(--border); border-radius:16px;
+  padding:16px; text-align:center;
+}
+.score-gauge-card.primary { border-color: rgba(46,125,50,0.3); background:#F1F8E9; }
+.gauge-value { font-size:32px; font-weight:900; line-height:1; }
+.gauge-label { font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+.gauge-bar { height:6px; background:#E0E0E0; border-radius:3px; margin-top:8px; overflow:hidden; }
+.gauge-bar-fill { height:100%; border-radius:3px; transition:width 0.6s ease; }
+
+/* ── Comparison grid ── */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.compare-panel {
+  background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:16px;
+}
+.compare-panel.ocr-panel { border-color: rgba(21,101,192,0.25); background:#FAFCFF; }
+.compare-panel-title {
+  font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;
+  color:var(--text2); margin-bottom:12px; display:flex; align-items:center; gap:8px;
+}
+.compare-panel-title .badge-ai { background:#EEF4FE; color:#1565C0; padding:2px 8px; border-radius:6px; font-size:10px; }
+.cmp-row { display:flex; flex-direction:column; gap:2px; padding:8px 0; border-bottom:1px solid #F0F0F0; }
+.cmp-row:last-child { border-bottom:none; }
+.cmp-label { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; }
+.cmp-value { font-size:13px; font-weight:600; color:var(--text); }
+.cmp-value.match   { color:#2E7D32; }
+.cmp-value.mismatch { color:#C62828; background:#FFEBEE; padding:2px 6px; border-radius:4px; }
+.cmp-score { font-size:10px; color:var(--text3); margin-top:1px; }
+.cmp-score.match-sc { color:#2E7D32; }
+.cmp-score.mis-sc   { color:#C62828; }
+
+/* ── AI Decision panel ── */
+.ai-panel-card {
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+  border-radius: 16px; padding: 20px 24px; color:#fff; margin-bottom:16px;
+}
+.ai-panel-card.flagged {
+  background: linear-gradient(135deg, #B71C1C 0%, #D32F2F 100%);
+}
+.ai-panel-card.review {
+  background: linear-gradient(135deg, #E65100 0%, #F57C00 100%);
+}
+.ai-headline { font-size:20px; font-weight:800; margin-bottom:4px; }
+.ai-sub { font-size:13px; opacity:0.85; }
+.ai-factors { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+.ai-factor-block { background:rgba(255,255,255,0.12); border-radius:10px; padding:12px; }
+.ai-factor-title { font-size:11px; font-weight:800; opacity:0.8; margin-bottom:8px; text-transform:uppercase; }
+.ai-factor-item { font-size:12px; margin-bottom:4px; display:flex; gap:6px; align-items:flex-start; }
+
+/* ── Action buttons ── */
+.action-bar {
+  display:flex; gap:12px; margin-bottom:20px; align-items:center; flex-wrap:wrap;
+}
+.btn-approve { background:linear-gradient(135deg,#2E7D32,#388E3C); color:#fff; border:none; border-radius:10px; padding:11px 24px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-approve:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,125,50,0.35); }
+.btn-reject  { background:linear-gradient(135deg,#C62828,#E53935); color:#fff; border:none; border-radius:10px; padding:11px 24px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-reject:hover  { transform:translateY(-1px); box-shadow:0 6px 16px rgba(198,40,40,0.35); }
+.btn-flag    { background:#FFF3E0; color:#E65100; border:1.5px solid #FFB74D; border-radius:10px; padding:11px 24px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-flag:hover    { background:#FFE0B2; }
+.btn-rerun   { background:#EEF4FE; color:#1565C0; border:1.5px solid #90CAF9; border-radius:10px; padding:11px 18px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-rerun:hover   { background:#BBDEFB; }
+.remarks-input { flex:1; min-width:180px; padding:10px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-family:inherit; }
+
+/* ── Document previews ── */
+.doc-previews { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.doc-thumb {
+  width:120px; border:1.5px solid var(--border); border-radius:10px;
+  overflow:hidden; cursor:pointer; transition:all 0.2s;
+  background:#F8F8F8; text-align:center; padding:12px 8px;
+}
+.doc-thumb:hover { border-color:#1565C0; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.doc-thumb-icon { font-size:28px; margin-bottom:4px; }
+.doc-thumb-label { font-size:10px; font-weight:700; color:var(--text2); }
+.doc-thumb.uploaded { border-color:#2E7D32; background:#F1F8E9; }
+
+/* ── Loading state ── */
+.loading-spin {
+  text-align:center; padding:60px 24px; color:var(--text3);
+}
+.spinner { width:40px; height:40px; border:4px solid #E0E0E0; border-top-color:#2E7D32; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Alert ── */
+.alert-dup { background:#FCE4EC; border:1px solid #F48FB1; border-radius:10px; padding:10px 14px; font-size:13px; color:#880E4F; margin-bottom:12px; display:flex; gap:8px; }
+.alert-ok  { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:10px; padding:10px 14px; font-size:13px; color:#1B5E20; margin-bottom:12px; display:flex; gap:8px; }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <div class="dv-topbar">
+    <div>
+      <div class="page-heading" style="margin-bottom:2px;">AI Document Verification</div>
+      <div class="page-sub" style="margin-bottom:0;">PaddleOCR extraction · Fuzzy matching · AI decision engine</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="ocr-mode-badge" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;background:#EEF4FE;color:#1565C0;">🤖 OCR Mode: Loading...</span>
+      <button class="btn btn-primary btn-sm" onclick="loadAllDecisions()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="dv-layout">
+    <!-- Left: Farmer list with AI scores -->
+    <div class="dv-left">
+      <div class="left-header">
+        <div style="font-size:13px;font-weight:700;">Farmers Awaiting Verification</div>
+        <div id="list-count" style="font-size:11px;color:var(--text3);margin-top:2px;">Loading...</div>
+        <input class="left-search" id="search-input" placeholder="🔍 Search farmer name..." oninput="filterList(this.value)">
+      </div>
+      <div id="farmer-list">
+        <div class="loading-spin"><div class="spinner"></div>Loading farmers...</div>
+      </div>
+    </div>
+
+    <!-- Right: Detail panel -->
+    <div class="dv-right">
+      <div class="dv-right-inner" id="dv-right-inner">
+        <div style="text-align:center;padding:80px 24px;color:var(--text3);">
+          <div style="font-size:56px;margin-bottom:16px;">🔍</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);">Select a farmer to verify</div>
+          <div style="font-size:13px;margin-top:6px;">Choose from the list on the left to run AI analysis</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('doc-verify');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+let allDecisions = [];
+let activeUserId = null;
+let activeDecisionId = null;
+
+// ── Load all decisions ──────────────────────────────────────────
+async function loadAllDecisions() {
+  document.getElementById('farmer-list').innerHTML = '<div class="loading-spin"><div class="spinner"></div>Loading...</div>';
+  try {
+    const res = await fetch(`${API}/ocr/all-decisions`);
+    if (res.ok) {
+      allDecisions = await res.json();
+    } else {
+      allDecisions = await loadFarmersAsFallback();
+    }
+  } catch {
+    allDecisions = await loadFarmersAsFallback();
+  }
+  renderFarmerList(allDecisions);
+}
+
+// Fallback: load farmers and trigger analysis
+async function loadFarmersAsFallback() {
+  try {
+    const res = await fetch(`${API}/farmers/`);
+    if (!res.ok) return getDemoData();
+    const farmers = await res.json();
+    return farmers.slice(0, 20).map(f => ({
+      user_id: f.id,
+      farmer_name: f.full_name,
+      farmer_id: f.farmer_id,
+      district: f.district,
+      overall_score: null,
+      decision: 'pending',
+      fraud_risk: null,
+      confidence: null,
+      created_at: f.created_at,
+    }));
+  } catch { return getDemoData(); }
+}
+
+function getDemoData() {
+  return [
+    { user_id: 1, farmer_name: 'Ramesh Shankar Patil', farmer_id: 'KID-MH-2025-00001', district: 'Nashik', overall_score: 94.2, decision: 'auto_approved', fraud_risk: 5.8, confidence: 92.1, duplicate_aadhaar: false },
+    { user_id: 2, farmer_name: 'Sunita Vijay Deshmukh', farmer_id: 'KID-MH-2025-00002', district: 'Pune', overall_score: 76.5, decision: 'manual_review', fraud_risk: 23.5, confidence: 71.0, duplicate_aadhaar: false },
+    { user_id: 3, farmer_name: 'Vijay Ramrao Singh', farmer_id: 'KID-MH-2025-00003', district: 'Nagpur', overall_score: 58.3, decision: 'flagged', fraud_risk: 42.0, confidence: 54.5, duplicate_aadhaar: true },
+    { user_id: 4, farmer_name: 'Lakshmi Patel', farmer_id: 'KID-MH-2025-00004', district: 'Aurangabad', overall_score: 88.7, decision: 'manual_review', fraud_risk: 11.3, confidence: 85.2, duplicate_aadhaar: false },
+  ];
+}
+
+function renderFarmerList(items) {
+  const count = document.getElementById('list-count');
+  count.textContent = `${items.length} farmer${items.length !== 1 ? 's' : ''} found`;
+
+  if (!items.length) {
+    document.getElementById('farmer-list').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px;">No farmers found</div>';
+    return;
+  }
+
+  document.getElementById('farmer-list').innerHTML = items.map(f => {
+    const sc = f.overall_score;
+    const scClass = sc === null ? 'score-mid' : sc >= 90 ? 'score-high' : sc >= 70 ? 'score-mid' : 'score-low';
+    const scText  = sc === null ? 'Not analyzed' : `Score: ${sc.toFixed(1)}%`;
+    const decMap = { auto_approved:'Approved', manual_review:'Review', flagged:'Flagged', pending:'Pending' };
+    const stClass = { auto_approved:'st-approved', manual_review:'st-review', flagged:'st-flagged', pending:'st-pending' }[f.decision] || 'st-pending';
+    return `
+    <div class="doc-list-item ${activeUserId === f.user_id ? 'active' : ''}" id="farmer-li-${f.user_id}" onclick="selectFarmer(${f.user_id})">
+      <div class="dli-name">${f.farmer_name || 'Unknown'}</div>
+      <div class="dli-sub">${f.farmer_id || '—'} · ${f.district || '—'}</div>
+      <div class="dli-badges">
+        <span class="badge-score ${scClass}">${scText}</span>
+        <span class="badge-status ${stClass}">${decMap[f.decision] || f.decision}</span>
+        ${f.duplicate_aadhaar ? '<span class="badge-dup">⚠ Dup Aadhaar</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterList(q) {
+  const filtered = allDecisions.filter(f => (f.farmer_name || '').toLowerCase().includes(q.toLowerCase()));
+  renderFarmerList(filtered);
+}
+
+// ── Select farmer and load full AI analysis ─────────────────────
+async function selectFarmer(userId) {
+  activeUserId = userId;
+  document.querySelectorAll('.doc-list-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`farmer-li-${userId}`)?.classList.add('active');
+
+  document.getElementById('dv-right-inner').innerHTML = '<div class="loading-spin"><div class="spinner"></div>Running AI analysis...</div>';
+
+  try {
+    // Run fresh analysis
+    const anaRes = await fetch(`${API}/ocr/analyze/${userId}`, { method: 'POST' });
+    if (!anaRes.ok) throw new Error('Analysis failed');
+    const data = await anaRes.json();
+
+    // Update OCR mode badge
+    const modeEl = document.getElementById('ocr-mode-badge');
+    if (modeEl) {
+      const isReal = data.ocr_mode === 'real';
+      modeEl.textContent = isReal ? '🟢 PaddleOCR Active' : '🟡 Simulated OCR';
+      modeEl.style.background = isReal ? '#E8F5E9' : '#FFF3E0';
+      modeEl.style.color = isReal ? '#2E7D32' : '#E65100';
+    }
+
+    // Get decision ID
+    const decRes = await fetch(`${API}/ocr/decision/${userId}`);
+    if (decRes.ok) {
+      const dec = await decRes.json();
+      activeDecisionId = dec.id;
+    }
+
+    // Get farmer docs
+    let docs = [];
+    try {
+      const dRes = await fetch(`${API}/documents/${userId}`);
+      if (dRes.ok) docs = await dRes.json();
+    } catch {}
+
+    renderDetailPanel(data, docs, userId);
+
+    // Refresh list
+    loadAllDecisions();
+
+  } catch(err) {
+    // Load from existing decision if analysis fails
+    try {
+      const decRes = await fetch(`${API}/ocr/decision/${userId}`);
+      if (decRes.ok) {
+        const data = await decRes.json();
+        activeDecisionId = data.id;
+        renderDetailPanel(data, [], userId);
+      } else {
+        throw err;
+      }
+    } catch {
+      document.getElementById('dv-right-inner').innerHTML = `
+        <div style="text-align:center;padding:60px 24px;color:var(--text3);">
+          <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);">Analysis failed</div>
+          <div style="font-size:13px;margin-top:4px;">${err.message}</div>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="selectFarmer(${userId})">Retry</button>
+        </div>`;
+    }
+  }
+}
+
+// ── Render full detail panel ────────────────────────────────────
+function renderDetailPanel(data, docs, userId) {
+  const score       = data.overall_score ?? 0;
+  const fraudRisk   = data.fraud_risk ?? 0;
+  const confidence  = data.confidence ?? 0;
+  const approvalP   = data.approval_probability ?? 0;
+  const decision    = data.decision || 'manual_review';
+  const positives   = data.positive_factors || [];
+  const risks       = data.risk_factors || [];
+  const comparisons = data.comparisons || [];
+  const isDup       = data.duplicate_aadhaar;
+  const mismatches  = data.mismatches || [];
+
+  const decLabel  = { auto_approved:'✅ Auto Approved', manual_review:'⚠️ Manual Review Required', flagged:'🚫 Flagged for Fraud' }[decision] || decision;
+  const panelCls  = { auto_approved:'', manual_review:'review', flagged:'flagged' }[decision] || '';
+  const scoreColor = score >= 90 ? '#2E7D32' : score >= 70 ? '#E65100' : '#C62828';
+  const barColor   = score >= 90 ? '#4CAF50' : score >= 70 ? '#FF9800' : '#F44336';
+
+  // Comparison rows HTML
+  function cmpRows(side) {
+    if (!comparisons.length) return '<div style="padding:12px;color:var(--text3);font-size:12px;">No data available</div>';
+    return comparisons.map(c => {
+      const val = side === 'ocr' ? c.ocr : c.form;
+      const isMatch = c.match;
+      const cls = val === '—' ? '' : (isMatch ? 'match' : 'mismatch');
+      const scCls = isMatch ? 'match-sc' : 'mis-sc';
+      return `<div class="cmp-row">
+        <div class="cmp-label">${c.field}</div>
+        <div class="cmp-value ${cls}">${val || '—'}</div>
+        ${side === 'ocr' ? `<div class="cmp-score ${scCls}">${c.score}% match</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Document thumbs
+  const docTypes = { aadhaar:'🪪 Aadhaar', satbara:'🗺️ 7/12', '8a':'📋 8-A', bank:'🏦 Bank', photo:'📷 Photo', caste:'📜 Caste', income:'💰 Income', elec:'⚡ Elec' };
+  const docHtml = Object.entries(docTypes).map(([type, label]) => {
+    const doc = docs.find(d => d.doc_type === type);
+    const cls = doc ? 'uploaded' : '';
+    const url = doc ? `${API}${doc.url}` : null;
+    return `<div class="doc-thumb ${cls}" onclick="${url ? `window.open('${url}','_blank')` : `alert('No ${type} document uploaded')`}">
+      <div class="doc-thumb-icon">${label.split(' ')[0]}</div>
+      <div class="doc-thumb-label">${label.split(' ').slice(1).join(' ')}</div>
+      ${doc ? '<div style="font-size:9px;color:#2E7D32;margin-top:2px;font-weight:700;">✓ Uploaded</div>' : '<div style="font-size:9px;color:#9CA3AF;margin-top:2px;">Not uploaded</div>'}
+    </div>`;
+  }).join('');
+
+  document.getElementById('dv-right-inner').innerHTML = `
+    <!-- Duplicate Aadhaar Alert -->
+    ${isDup ? '<div class="alert-dup">⚠️ <strong>Duplicate Aadhaar detected!</strong> Another farmer is registered with the same Aadhaar number. This application is flagged for fraud review.</div>' : ''}
+    ${!isDup && score >= 90 ? '<div class="alert-ok">✅ All checks passed. Documents verified with high confidence.</div>' : ''}
+
+    <!-- Score gauges -->
+    <div class="score-gauge-row">
+      <div class="score-gauge-card primary">
+        <div class="gauge-value" style="color:${scoreColor}">${score.toFixed(1)}%</div>
+        <div class="gauge-label">Overall Match</div>
+        <div class="gauge-bar"><div class="gauge-bar-fill" style="width:${score}%;background:${barColor};"></div></div>
+      </div>
+      <div class="score-gauge-card">
+        <div class="gauge-value" style="color:#C62828">${fraudRisk.toFixed(1)}%</div>
+        <div class="gauge-label">Fraud Risk</div>
+        <div class="gauge-bar"><div class="gauge-bar-fill" style="width:${fraudRisk}%;background:#F44336;"></div></div>
+      </div>
+      <div class="score-gauge-card">
+        <div class="gauge-value" style="color:#1565C0">${confidence.toFixed(1)}%</div>
+        <div class="gauge-label">AI Confidence</div>
+        <div class="gauge-bar"><div class="gauge-bar-fill" style="width:${confidence}%;background:#1976D2;"></div></div>
+      </div>
+      <div class="score-gauge-card">
+        <div class="gauge-value" style="color:#2E7D32">${approvalP.toFixed(1)}%</div>
+        <div class="gauge-label">Approval Prob.</div>
+        <div class="gauge-bar"><div class="gauge-bar-fill" style="width:${approvalP}%;background:#4CAF50;"></div></div>
+      </div>
+    </div>
+
+    <!-- AI Decision Panel -->
+    <div class="ai-panel-card ${panelCls}">
+      <div class="ai-headline">${decLabel}</div>
+      <div class="ai-sub">AI analysis complete · ${mismatches.length} field mismatch(es) detected</div>
+      <div class="ai-factors">
+        <div class="ai-factor-block">
+          <div class="ai-factor-title">✔ Positive Factors</div>
+          ${positives.length ? positives.map(p => `<div class="ai-factor-item"><span>✓</span><span>${p}</span></div>`).join('') : '<div class="ai-factor-item"><span>—</span><span>None detected</span></div>'}
+        </div>
+        <div class="ai-factor-block">
+          <div class="ai-factor-title">✖ Risk Factors</div>
+          ${risks.length ? risks.map(r => `<div class="ai-factor-item"><span>✗</span><span>${r}</span></div>`).join('') : '<div class="ai-factor-item"><span>—</span><span>No risks detected</span></div>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Previews -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">📁 Uploaded Documents <span style="font-size:11px;color:var(--text3);font-weight:400;">(click to view)</span></div>
+      <div class="doc-previews">${docHtml}</div>
+    </div>
+
+    <!-- OCR vs Form Comparison -->
+    <div class="compare-grid">
+      <div class="compare-panel ocr-panel">
+        <div class="compare-panel-title">
+          <span class="badge-ai">🤖 OCR</span> PaddleOCR Extracted Data
+        </div>
+        ${cmpRows('ocr')}
+      </div>
+      <div class="compare-panel">
+        <div class="compare-panel-title">📋 Application Form Data</div>
+        ${cmpRows('form')}
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="admin-card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Officer Decision</div>
+      <div class="action-bar">
+        <input class="remarks-input" id="admin-remarks" placeholder="Add remarks (optional)...">
+        <button class="btn-approve" onclick="makeDecision('approved')">✓ Approve</button>
+        <button class="btn-flag"    onclick="makeDecision('flagged')">⚠ Flag for Review</button>
+        <button class="btn-reject"  onclick="makeDecision('rejected')">✗ Reject</button>
+        <button class="btn-rerun"   onclick="selectFarmer(${userId})">↻ Re-run OCR</button>
+      </div>
+    </div>`;
+}
+
+// ── Make admin decision ─────────────────────────────────────────
+async function makeDecision(decision) {
+  if (!activeDecisionId) {
+    alert('Please select a farmer first.');
+    return;
+  }
+  const remarks = document.getElementById('admin-remarks')?.value || '';
+  const label   = { approved:'Approved ✓', rejected:'Rejected ✗', flagged:'Flagged ⚠' }[decision] || decision;
+
+  try {
+    const res = await fetch(`${API}/ocr/decision/${activeDecisionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_decision: decision, admin_remarks: remarks, decided_by: 'Admin' }),
+    });
+    if (!res.ok) throw new Error('Failed to save decision');
+    alert(`✅ Decision recorded: ${label}`);
+    loadAllDecisions();
+    document.getElementById('dv-right-inner').innerHTML = `
+      <div style="text-align:center;padding:80px 24px;color:var(--text3);">
+        <div style="font-size:56px;margin-bottom:16px;">✅</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">Decision recorded: ${label}</div>
+        <div style="font-size:13px;margin-top:6px;">Select another farmer to continue verification</div>
+      </div>`;
+    activeDecisionId = null;
+    activeUserId = null;
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Init
+loadAllDecisions();
+</script>
+</body>
+</html>

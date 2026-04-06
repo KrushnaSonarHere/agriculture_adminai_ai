@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports & Analytics — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.report-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+.report-tab {
+  padding:10px 20px; font-size:13px; font-weight:600;
+  color:var(--text3); cursor:pointer; border-bottom:2px solid transparent;
+  transition:all 0.15s; user-select:none; background:none; border-top:none; border-left:none; border-right:none;
+}
+.report-tab.active { color:var(--green); border-bottom-color:var(--green); }
+.report-tab:hover:not(.active) { color:var(--text); }
+.report-pane { display:none; }
+.report-pane.active { display:block; }
+.insights-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+.insight-card {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px; font-size:12px;
+}
+.insight-icon { font-size:24px; margin-bottom:8px; }
+.insight-title { font-weight:700; color:var(--text); margin-bottom:4px; }
+.insight-text  { color:var(--text2); line-height:1.6; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.kpi-box {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px; text-align:center;
+}
+.kpi-val   { font-size:22px; font-weight:800; color:var(--text); }
+.kpi-label { font-size:11px; color:var(--text3); margin-top:2px; }
+.kpi-trend { font-size:11px; color:var(--approved); margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div class="page-heading">Reports & Analytics</div>
+        <div class="page-sub">Comprehensive insights into scheme performance and farmer data</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select class="filter-select" id="report-period">
+          <option>Last 30 Days</option>
+          <option>Last 90 Days</option>
+          <option>This Year</option>
+          <option>Custom Range</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="exportReport()">⬇ Export PDF</button>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-box">
+        <div class="kpi-val">₹2.4 Cr</div>
+        <div class="kpi-label">Total Benefits Disbursed</div>
+        <div class="kpi-trend">▲ +18% vs last month</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-val">94.8%</div>
+        <div class="kpi-label">AI Processing Accuracy</div>
+        <div class="kpi-trend">▲ +2.3% improvement</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-val">4.2 days</div>
+        <div class="kpi-label">Avg. Processing Time</div>
+        <div class="kpi-trend">▼ Down from 7.1 days</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-val">87%</div>
+        <div class="kpi-label">Farmer Satisfaction</div>
+        <div class="kpi-trend">▲ +5% this quarter</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="report-tabs">
+      <button class="report-tab active" onclick="switchTab('overview')">📊 Overview</button>
+      <button class="report-tab" onclick="switchTab('schemes')">🌾 Schemes</button>
+      <button class="report-tab" onclick="switchTab('districts')">📍 Districts</button>
+      <button class="report-tab" onclick="switchTab('ai')">🤖 AI Performance</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="report-pane active" id="pane-overview">
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="admin-card">
+          <div class="card-title">Application Trends</div>
+          <div class="card-sub">Monthly submitted vs approved vs rejected</div>
+          <canvas id="chart-trend" height="220"></canvas>
+        </div>
+        <div class="admin-card">
+          <div class="card-title">Status Distribution</div>
+          <div class="card-sub">Current application pipeline breakdown</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:32px;padding:16px;">
+            <canvas id="chart-status" style="max-width:180px;max-height:180px;"></canvas>
+            <div id="status-legend" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="insights-grid">
+        <div class="insight-card">
+          <div class="insight-icon">📈</div>
+          <div class="insight-title">Application Volume Growing</div>
+          <div class="insight-text">March 2026 saw a 22% increase in new applications compared to February, driven by PM-KISAN enrollment drive.</div>
+        </div>
+        <div class="insight-card">
+          <div class="insight-icon">🤖</div>
+          <div class="insight-title">AI Reducing Manual Work</div>
+          <div class="insight-text">67% of applications are now auto-approved by AI, reducing officer workload by 143 hours this month.</div>
+        </div>
+        <div class="insight-card">
+          <div class="insight-icon">⚠️</div>
+          <div class="insight-title">Fraud Alerts Down</div>
+          <div class="insight-text">Fraudulent applications detected this month: 62 (down from 89 last month). AI fraud detection improved by 12%.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schemes Tab -->
+    <div class="report-pane" id="pane-schemes">
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="admin-card">
+          <div class="card-title">Scheme-wise Application Count</div>
+          <div class="card-sub">Top schemes by number of applications</div>
+          <canvas id="chart-schemes" height="240"></canvas>
+        </div>
+        <div class="admin-card">
+          <div class="card-title">Scheme-wise Approval Rate</div>
+          <div class="card-sub">Percentage of applications approved per scheme</div>
+          <canvas id="chart-approval" height="240"></canvas>
+        </div>
+      </div>
+      <div class="admin-card" style="padding:0;">
+        <div class="table-header"><span class="table-header-title">Scheme Performance Summary</span></div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Scheme</th><th>Total Applied</th><th>Approved</th><th>Pending</th><th>Rejected</th><th>Approval Rate</th><th>Avg AI Score</th></tr>
+            </thead>
+            <tbody id="scheme-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Districts Tab -->
+    <div class="report-pane" id="pane-districts">
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="admin-card">
+          <div class="card-title">Applications by District</div>
+          <div class="card-sub">Top 8 districts by application volume</div>
+          <canvas id="chart-districts" height="260"></canvas>
+        </div>
+        <div class="admin-card">
+          <div class="card-title">Coverage Map Insights</div>
+          <div class="card-sub">District-level farmer registration analysis</div>
+          <div style="padding:8px 0;" id="district-rows"></div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Performance Tab -->
+    <div class="report-pane" id="pane-ai">
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="admin-card">
+          <div class="card-title">AI Decision Trend</div>
+          <div class="card-sub">Auto-approved vs manual review vs rejected over time</div>
+          <canvas id="chart-ai-trend" height="220"></canvas>
+        </div>
+        <div class="admin-card">
+          <div class="card-title">AI Accuracy Breakdown</div>
+          <div class="card-sub">Performance metrics for each AI module</div>
+          <div style="padding:8px 0;" id="ai-bars"></div>
+        </div>
+      </div>
+      <div class="insights-grid">
+        <div class="insight-card">
+          <div class="insight-icon">🎯</div>
+          <div class="insight-title">Document OCR: 98%</div>
+          <div class="insight-text">Highest accuracy this month. Aadhaar extraction improved by 3% after model update on March 15.</div>
+        </div>
+        <div class="insight-card">
+          <div class="insight-icon">🔍</div>
+          <div class="insight-title">Fraud Detection: 95%</div>
+          <div class="insight-text">62 fraud cases detected automatically. 5 false positives flagged and reviewed by officers.</div>
+        </div>
+        <div class="insight-card">
+          <div class="insight-icon">⚡</div>
+          <div class="insight-title">Speed: 99% uptime</div>
+          <div class="insight-text">Average decision time: 2.1 seconds per application. System processed 1,250 applications this month.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('reports');
+renderAdminTopbar();
+
+function aiScoreStr(v) {
+  const c = v>=80?'ai-score-high':v>=65?'ai-score-mid':'ai-score-low';
+  return '<span class="ai-score '+c+'">'+v+'%</span>';
+}
+
+// Render scheme table
+const SCHEMES = [['PM-KISAN',478,410,42,26,86,88],['Crop Insurance',334,268,55,11,80,82],['Equipment Subsidy',215,162,38,15,75,79],['Organic Farming',143,98,32,13,69,74],['Kisan Credit Card',80,62,12,6,78,84]];
+document.getElementById('scheme-tbody').innerHTML = SCHEMES.map(([s,t,a,p,r,ar,ai])=>'<tr><td>'+s+'</td><td>'+t+'</td><td>'+a+'</td><td>'+p+'</td><td>'+r+'</td><td>'+aiScoreStr(ar)+'</td><td>'+aiScoreStr(ai)+'</td></tr>').join('');
+
+// Render district rows
+const DISTRICTS = [['Nashik','245','87','2,340'],['Pune','198','82','1,892'],['Nagpur','176','79','1,650'],['Aurangabad','154','76','1,420'],['Solapur','132','73','1,210'],['Kolhapur','118','70','1,090']];
+document.getElementById('district-rows').innerHTML = DISTRICTS.map(([d,apps,rate,farmers])=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;"><div style="font-weight:600;">'+d+'</div><div style="color:var(--text3);">'+apps+' apps · '+farmers+' farmers</div><div class="progress-bar" style="width:100px;margin:0 10px;"><div class="progress-fill green" style="width:'+rate+'%;"></div></div><div style="font-weight:700;color:var(--green);min-width:36px;">'+rate+'%</div></div>').join('');
+
+// Render AI accuracy bars
+const AI_BARS = [['Document OCR',98],['Eligibility Check',96],['Fraud Detection',95],['Bank Verification',94],['Land Record Match',91],['Auto-Resolution',92]];
+document.getElementById('ai-bars').innerHTML = AI_BARS.map(([label,val])=>'<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--text2);">'+label+'</span><strong>'+val+'%</strong></div><div class="progress-bar"><div class="progress-fill '+(val>=95?'green':val>=90?'blue':'red')+'" style="width:'+val+'%;"></div></div></div>').join('');
+
+// Tab switching
+function switchTab(id) {
+  document.querySelectorAll('.report-tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['overview','schemes','districts','ai'][i]===id);
+  });
+  document.querySelectorAll('.report-pane').forEach(p=>{
+    p.classList.toggle('active', p.id==='pane-'+id);
+  });
+  if (id==='schemes' && !window._schemesRendered)   { initSchemeCharts(); window._schemesRendered=true; }
+  if (id==='districts' && !window._distRendered)    { initDistrictChart(); window._distRendered=true; }
+  if (id==='ai' && !window._aiRendered)             { initAIChart(); window._aiRendered=true; }
+}
+
+// Overview charts
+new Chart(document.getElementById('chart-trend'), {
+  type:'bar',
+  data:{
+    labels:['Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets:[
+      {label:'Approved', data:[95,140,125,180,165,210], backgroundColor:'#2E7D32', borderRadius:3},
+      {label:'Pending',  data:[40,55,60,70,65,75], backgroundColor:'#FFB300', borderRadius:3},
+      {label:'Rejected', data:[15,20,25,20,18,12], backgroundColor:'#C62828', borderRadius:3},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},usePointStyle:true}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#F0F0F0'},beginAtZero:true}},barPercentage:0.6}
+});
+
+const statusData = [{l:'Approved',v:680,c:'#2E7D32'},{l:'Pending',v:342,c:'#FFB300'},{l:'Under Review',v:178,c:'#1565C0'},{l:'Rejected',v:50,c:'#C62828'}];
+new Chart(document.getElementById('chart-status'),{
+  type:'doughnut',
+  data:{labels:statusData.map(d=>d.l),datasets:[{data:statusData.map(d=>d.v),backgroundColor:statusData.map(d=>d.c),borderWidth:2}]},
+  options:{responsive:false,cutout:'65%',plugins:{legend:{display:false}}}
+});
+const sLeg = document.getElementById('status-legend');
+statusData.forEach(d=>{sLeg.innerHTML+=`<div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:${d.c};flex-shrink:0;"></span><span>${d.l} <strong>${d.v}</strong></span></div>`;});
+
+function initSchemeCharts() {
+  new Chart(document.getElementById('chart-schemes'),{
+    type:'bar',
+    data:{labels:['PM-KISAN','Crop Ins.','Equipment','Organic','Credit Card'],datasets:[{data:[478,334,215,143,80],backgroundColor:['#2E7D32','#1565C0','#E65100','#6A1B9A','#00838F'],borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F0F0'},beginAtZero:true},y:{grid:{display:false}}}}
+  });
+  new Chart(document.getElementById('chart-approval'),{
+    type:'bar',
+    data:{labels:['PM-KISAN','Crop Ins.','Equipment','Organic','Credit Card'],datasets:[{label:'Approval %',data:[86,80,75,69,78],backgroundColor:'#66BB6A',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{max:100,grid:{color:'#F0F0F0'},beginAtZero:true},y:{grid:{display:false}}}}
+  });
+}
+
+function initDistrictChart() {
+  new Chart(document.getElementById('chart-districts'),{
+    type:'bar',
+    data:{labels:['Nashik','Pune','Nagpur','Aurangabad','Solapur','Kolhapur','Latur','Jalgaon'],datasets:[{data:[245,198,176,154,132,118,97,84],backgroundColor:'#42A5F5',borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#F0F0F0'},beginAtZero:true}},barPercentage:0.6}
+  });
+}
+
+function initAIChart() {
+  new Chart(document.getElementById('chart-ai-trend'),{
+    type:'line',
+    data:{
+      labels:['Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets:[
+        {label:'Auto-Approved',data:[55,60,62,64,66,67],borderColor:'#2E7D32',backgroundColor:'rgba(46,125,50,0.1)',tension:0.4,fill:true},
+        {label:'Manual Review',data:[35,31,29,28,27,28],borderColor:'#FFB300',backgroundColor:'rgba(255,179,0,0.08)',tension:0.4,fill:true},
+        {label:'Rejected',data:[10,9,9,8,7,5],borderColor:'#C62828',backgroundColor:'rgba(198,40,40,0.05)',tension:0.4,fill:true},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},usePointStyle:true}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#F0F0F0'},beginAtZero:true,max:100}}}
+  });
+}
+
+function exportReport() {
+  alert('📄 Report export in PDF format has been queued.\n\nIn production, this generates a full PDF report with all charts, tables, and insights for the selected period.');
+}
+</script>
+</body>
+</html>

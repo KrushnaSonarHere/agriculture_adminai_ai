@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escalated Cases — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+<style>
+.ticket-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 12px;
+  overflow: hidden;
+}
+.ticket-header {
+  padding: 14px 18px; display: flex;
+  align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.ticket-header.high   { border-left: 4px solid var(--rejected); }
+.ticket-header.medium { border-left: 4px solid var(--pending); }
+.ticket-header.low    { border-left: 4px solid var(--approved); }
+.ticket-body { padding: 14px 18px; }
+.ticket-footer {
+  padding: 10px 18px; background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.agent-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--green-light); color: var(--green-dark);
+  border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600;
+}
+.call-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  border-radius: 20px;
+}
+.call-status.waiting    { background:#FFF3E0; color:#E65100; }
+.call-status.in-call    { background:#E8F5E9; color:#2E7D32; }
+.call-status.completed  { background:#E3F2FD; color:#1565C0; }
+.call-status.scheduled  { background:#F3E5F5; color:#6A1B9A; }
+.info-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; font-size: 12px; margin-top: 10px;
+}
+.info-item { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.info-label { color: var(--text3); font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+.info-value { font-weight: 600; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+
+    <div class="page-heading">Escalated Cases</div>
+    <div class="page-sub">High-priority grievances escalated from the AI chatbot for human intervention</div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-card-label">Total Escalated</div>
+        <div class="stat-card-val">24</div>
+        <div class="stat-card-trend down">▲ +5 this week</div>
+        <div class="stat-card-icon amber">☏</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Awaiting Call</div>
+        <div class="stat-card-val">8</div>
+        <div class="stat-card-trend down">Needs callback</div>
+        <div class="stat-card-icon" style="background:#FFEBEE;">🔴</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">In Call / Active</div>
+        <div class="stat-card-val">3</div>
+        <div class="stat-card-trend">Live right now</div>
+        <div class="stat-card-icon" style="background:#E8F5E9;">🟢</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Resolved Today</div>
+        <div class="stat-card-val">7</div>
+        <div class="stat-card-trend">▲ +2 from yesterday</div>
+        <div class="stat-card-icon check">✅</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="admin-card" style="padding:0;margin-bottom:16px;">
+      <div class="filters-bar">
+        <div class="filter-search" style="flex:2;">
+          <span>🔍</span>
+          <input type="text" id="esc-search" placeholder="Search ticket ID, farmer name..." oninput="filterTickets()">
+        </div>
+        <select class="filter-select" id="filter-call-status" onchange="filterTickets()">
+          <option value="">All Call Status</option>
+          <option value="waiting">Waiting for Call</option>
+          <option value="scheduled">Call Scheduled</option>
+          <option value="in-call">In Call</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select class="filter-select" id="filter-agent" onchange="filterTickets()">
+          <option value="">All Agents</option>
+          <option>Agent Ravi Sharma</option>
+          <option>Agent Pooja Iyer</option>
+          <option>Agent Suresh Naik</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+        <select class="filter-select" id="filter-esc-priority" onchange="filterTickets()">
+          <option value="">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Ticket Cards -->
+    <div id="ticket-list"></div>
+
+  </div>
+</div>
+</div>
+
+<!-- Assign Agent Modal -->
+<div class="modal-overlay" id="assign-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-head">
+      <span id="assign-title">Assign Agent & Schedule Call</span>
+      <span class="modal-close" onclick="closeAssign()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert-banner info" id="assign-info" style="margin-bottom:14px;"></div>
+      <div class="form-group">
+        <label class="form-label">Assign Agent</label>
+        <select class="form-select" id="agent-select">
+          <option>Agent Ravi Sharma (Available)</option>
+          <option>Agent Pooja Iyer (Available)</option>
+          <option>Agent Suresh Naik (On Call)</option>
+          <option>Agent Meena Joshi (Available)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Schedule Callback Time</label>
+        <input class="form-input" type="datetime-local" id="callback-time">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Internal Notes</label>
+        <textarea class="form-textarea" id="assign-notes" placeholder="Notes for the assigned agent..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeAssign()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAssign()">✅ Assign &amp; Schedule</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('escalated');
+renderAdminTopbar();
+
+let allTickets = [], filteredTickets = [], activeTicketId = null;
+
+const TICKETS = [
+  {
+    id: 'ESC-2026-001', grv_number: 'GRV-2026-1004',
+    farmer: 'Anjali Desai', farmer_id: 'KID-MH-2026-00108', mobile: '9432109876',
+    category: 'Document', priority: 'high', call_status: 'waiting',
+    agent: null, created: '2026-03-29T08:00:00',
+    summary: 'Document re-upload required but portal link not working. Farmer unable to complete application.',
+    ai_notes: 'Chatbot attempted 3 resolutions. Issue persists — likely portal bug. Escalated for manual callback.',
+    callback_time: null,
+  },
+  {
+    id: 'ESC-2026-002', grv_number: 'GRV-2026-1001',
+    farmer: 'Ramesh Patil', farmer_id: 'KID-MH-2026-00101', mobile: '9876543210',
+    category: 'Payment Issue', priority: 'high', call_status: 'in-call',
+    agent: 'Agent Ravi Sharma', created: '2026-03-28T10:00:00',
+    summary: 'PM Kisan 18th installment not credited even though Aadhaar is linked.',
+    ai_notes: 'Bank trace initiated by AI system. Requires manual DBT verification call.',
+    callback_time: '2026-03-30T10:30',
+  },
+  {
+    id: 'ESC-2026-003', grv_number: 'GRV-2026-1005',
+    farmer: 'Geeta Sharma', farmer_id: 'KID-MH-2026-00106', mobile: '9654321098',
+    category: 'Payment Issue', priority: 'medium', call_status: 'scheduled',
+    agent: 'Agent Pooja Iyer', created: '2026-03-27T12:00:00',
+    summary: 'Subsidy amount credited ₹12,000 instead of approved ₹25,000.',
+    ai_notes: 'Mismatch in disbursement detected. Finance dept escalation required.',
+    callback_time: '2026-03-30T15:00',
+  },
+  {
+    id: 'ESC-2026-004', grv_number: 'GRV-2026-1002',
+    farmer: 'Sunita Devi', farmer_id: 'KID-MH-2026-00102', mobile: '9123456789',
+    category: 'Delay', priority: 'medium', call_status: 'completed',
+    agent: 'Agent Suresh Naik', created: '2026-03-25T14:00:00',
+    summary: 'Crop insurance application pending for 45+ days without officer assignment.',
+    ai_notes: 'Auto-escalated after 30-day SLA breach. Officer assignment was missing.',
+    callback_time: '2026-03-29T11:00',
+  },
+  {
+    id: 'ESC-2026-005', grv_number: 'GRV-2026-1006',
+    farmer: 'Mohan Reddy', farmer_id: 'KID-MH-2026-00105', mobile: '9765432100',
+    category: 'Other', priority: 'low', call_status: 'waiting',
+    agent: null, created: '2026-03-29T16:00:00',
+    summary: 'Farmer requesting general guidance on organic farming scheme eligibility.',
+    ai_notes: 'Chatbot unable to answer complex eligibility query. Sent to human expert.',
+    callback_time: null,
+  },
+];
+
+const CALL_STATUS_LABELS = {
+  'waiting':   '🔴 Waiting for Call',
+  'scheduled': '🟡 Call Scheduled',
+  'in-call':   '🟢 In Call',
+  'completed': '🔵 Completed',
+};
+
+function callStatusHtml(status) {
+  const map = { waiting:'waiting', scheduled:'scheduled', 'in-call':'in-call', completed:'completed' };
+  return `<span class="call-status ${map[status]||'waiting'}">${CALL_STATUS_LABELS[status]||status}</span>`;
+}
+
+function renderTickets() {
+  const list = document.getElementById('ticket-list');
+  const tickets = filteredTickets;
+
+  if (!tickets.length) {
+    list.innerHTML = `<div class="admin-card" style="text-align:center;padding:40px;color:var(--text3);">No escalated cases found</div>`;
+    return;
+  }
+
+  list.innerHTML = tickets.map(t => {
+    const dt   = t.created ? new Date(t.created).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '—';
+    const cbdt = t.callback_time ? new Date(t.callback_time).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    const agentHtml = t.agent
+      ? `<div class="agent-pill">👮 ${t.agent}</div>`
+      : `<button class="btn btn-outline btn-sm" onclick="openAssign('${t.id}','${t.farmer}')">+ Assign Agent</button>`;
+
+    return `
+    <div class="ticket-card">
+      <div class="ticket-header ${t.priority}">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--blue);">${t.id}</span>
+          <span class="badge badge-filed">${t.grv_number}</span>
+          <span class="badge badge-${t.priority==='high'?'rejected':t.priority==='medium'?'pending':'approved'}">${t.priority} priority</span>
+          ${callStatusHtml(t.call_status)}
+        </div>
+        <div style="display:flex;gap:8px;">
+          ${t.call_status === 'waiting' || t.call_status === 'scheduled'
+            ? `<button class="btn btn-primary btn-sm" onclick="markInCall('${t.id}')">📞 Start Call</button>` : ''}
+          ${t.call_status !== 'completed'
+            ? `<button class="btn btn-outline btn-sm" onclick="markCompleted('${t.id}')">✅ Resolve</button>` : ''}
+        </div>
+      </div>
+
+      <div class="ticket-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;">${t.farmer}
+              <span style="font-size:11px;color:var(--text3);font-weight:400;"> · ${t.farmer_id}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);">📞 +91 ${t.mobile} · ${t.category}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--text3);">
+            Filed: ${dt}<br>Callback: ${cbdt}
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text);">${t.summary}</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">AI Notes</div>
+            <div class="info-value" style="font-size:11px;font-weight:400;color:var(--text2);">${t.ai_notes}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Category</div>
+            <div class="info-value">${t.category}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">GRV Reference</div>
+            <div class="info-value" style="color:var(--blue);">${t.grv_number}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket-footer">
+        ${agentHtml}
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="openAssign('${t.id}','${t.farmer}')">📋 Reassign</button>
+          <button class="btn btn-outline btn-sm" onclick="callFarmer('${t.mobile}','${t.farmer}')">📞 Call Now</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterTickets() {
+  const q   = document.getElementById('esc-search').value.toLowerCase();
+  const cs  = document.getElementById('filter-call-status').value;
+  const ag  = document.getElementById('filter-agent').value;
+  const pri = document.getElementById('filter-esc-priority').value;
+  filteredTickets = allTickets.filter(t => {
+    const mq   = !q   || [t.id,t.farmer,t.summary].join(' ').toLowerCase().includes(q);
+    const mcs  = !cs  || t.call_status === cs;
+    const mag  = !ag  || (ag==='unassigned' ? !t.agent : t.agent===ag);
+    const mpri = !pri || t.priority === pri;
+    return mq && mcs && mag && mpri;
+  });
+  renderTickets();
+}
+
+function openAssign(id, farmer) {
+  activeTicketId = id;
+  document.getElementById('assign-title').textContent = `Assign Agent — ${id}`;
+  document.getElementById('assign-info').textContent  = `Ticket: ${id} · Farmer: ${farmer}`;
+  // Set default callback to tomorrow 10am
+  const tmr = new Date(); tmr.setDate(tmr.getDate()+1); tmr.setHours(10,0);
+  document.getElementById('callback-time').value = tmr.toISOString().slice(0,16);
+  document.getElementById('assign-modal').classList.add('open');
+}
+function closeAssign() { document.getElementById('assign-modal').classList.remove('open'); }
+
+function confirmAssign() {
+  const agent = document.getElementById('agent-select').value;
+  const time  = document.getElementById('callback-time').value;
+  const t = allTickets.find(t=>t.id===activeTicketId);
+  if (t) { t.agent=agent; t.callback_time=time; t.call_status='scheduled'; }
+  filteredTickets = [...allTickets];
+  renderTickets();
+  closeAssign();
+  alert(`✅ Agent "${agent}" assigned and callback scheduled for ${new Date(time).toLocaleString('en-IN')}`);
+}
+
+function markInCall(id) {
+  const t = allTickets.find(t=>t.id===id);
+  if (t) t.call_status = 'in-call';
+  filteredTickets = [...allTickets];
+  renderTickets();
+}
+function markCompleted(id) {
+  if (!confirm('Mark this escalated case as resolved?')) return;
+  const t = allTickets.find(t=>t.id===id);
+  if (t) t.call_status = 'completed';
+  filteredTickets = [...allTickets];
+  renderTickets();
+}
+function callFarmer(mobile, name) {
+  alert(`📞 Initiating call to ${name}\nMobile: +91 ${mobile}\n\n[In production this integrates with your Call Center CTI system]`);
+}
+
+// Init
+allTickets      = [...TICKETS];
+filteredTickets = [...TICKETS];
+renderTickets();
+</script>
+</body>
+</html>

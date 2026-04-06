@@ -1,0 +1,535 @@
+/* ═══════════════════════════════════════════════════════════
+   scheme-detail.css  —  Government-grade scheme detail page
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Page wrapper ────────────────────────────────────────── */
+.sd-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+}
+
+/* ── Loading spinner ─────────────────────────────────────── */
+.sd-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text2, #64748b);
+  font-size: 14px;
+}
+
+.sd-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Controls bar ────────────────────────────────────────── */
+.sd-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sd-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sd-print-btn {
+  margin-left: auto;
+}
+
+/* Language toggle */
+.sd-lang-toggle {
+  display: flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.sd-lang-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.sd-lang-btn.active {
+  background: #166534;
+  color: #fff;
+}
+
+.sd-lang-btn:not(.active):hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* ── Hero header ─────────────────────────────────────────── */
+.sd-hero {
+  background: linear-gradient(135deg, #1a3a1a 0%, #2d6a2d 50%, #1a4a2d 100%);
+  border-radius: 18px;
+  padding: 36px 40px;
+  margin-bottom: 20px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.sd-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+
+.sd-hero::after {
+  content: '🌾';
+  position: absolute;
+  right: 32px;
+  bottom: 16px;
+  font-size: 80px;
+  opacity: 0.08;
+}
+
+.sd-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 16px;
+}
+
+.sd-status-dot {
+  width: 7px;
+  height: 7px;
+  background: #86efac;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.3); }
+}
+
+.sd-hero-title {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 0 0 24px;
+  max-width: 700px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 640px) {
+  .sd-hero-title { font-size: 20px; }
+  .sd-hero       { padding: 28px 24px; }
+}
+
+.sd-hero-meta {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.sd-hero-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sd-meta-icon {
+  font-size: 20px;
+  margin-top: 1px;
+}
+
+.sd-meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 2px;
+}
+
+.sd-meta-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.95);
+}
+
+.sd-meta-grant {
+  color: #86efac;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sd-hero-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sd-tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.sd-tag.green  { background: rgba(134,239,172,0.12); border-color: rgba(134,239,172,0.25); color: #86efac; }
+.sd-tag.blue   { background: rgba(147,197,253,0.12); border-color: rgba(147,197,253,0.25); color: #93c5fd; }
+.sd-tag.orange { background: rgba(253,186,116,0.12); border-color: rgba(253,186,116,0.25); color: #fdba74; }
+
+/* ── Timeline ────────────────────────────────────────────── */
+.sd-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 28px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.sd-card-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sd-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sd-timeline-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sd-timeline-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #86efac;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sd-timeline-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.sd-timeline-arrow {
+  font-size: 16px;
+  color: #86efac;
+  margin: 0 6px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .sd-timeline { flex-direction: column; align-items: flex-start; }
+  .sd-timeline-arrow { transform: rotate(90deg); }
+}
+
+/* ── Collapsible sections ────────────────────────────────── */
+.sd-section {
+  background: #fff;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.sd-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.sd-section-header:hover {
+  background: #f8fafc;
+}
+
+.sd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sd-section-icon {
+  font-size: 18px;
+}
+
+.sd-section-toggle {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.sd-section-body {
+  padding: 4px 24px 24px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ── Prose text ──────────────────────────────────────────── */
+.sd-prose {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #475569;
+  margin: 12px 0 0;
+}
+
+/* ── Benefits ────────────────────────────────────────────── */
+.sd-benefits-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #166534, #15803d);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sd-benefits-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22,101,52,0.3);
+}
+
+.sd-benefits-btn.outline {
+  background: transparent;
+  color: #166534;
+  border: 1.5px solid #166534;
+  margin-top: 12px;
+}
+
+.sd-benefit-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sd-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border-radius: 10px;
+  border-left: 3px solid #22c55e;
+  font-size: 13.5px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.sd-benefit-icon {
+  font-size: 14px;
+  color: #16a34a;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Eligibility checklist ───────────────────────────────── */
+.sd-check-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sd-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #374151;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  line-height: 1.5;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.2s;
+}
+
+.sd-check-item:hover {
+  border-color: #86efac;
+}
+
+.sd-check-icon {
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Document checklist ──────────────────────────────────── */
+.sd-doc-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sd-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #374151;
+  padding: 12px 16px;
+  background: #fafbff;
+  border-radius: 8px;
+  border: 1px solid #e8edfb;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.sd-doc-item:hover {
+  background: #eff3ff;
+  border-color: #a5b4fc;
+}
+
+.sd-doc-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Two-column layout ───────────────────────────────────── */
+.sd-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .sd-two-col { grid-template-columns: 1fr; }
+}
+
+/* ── CTA footer ──────────────────────────────────────────── */
+.sd-cta {
+  background: linear-gradient(135deg, #1a3a1a, #2d6a2d);
+  border-radius: 18px;
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.sd-cta-heading {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.sd-cta-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+}
+
+.sd-cta-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sd-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(34,197,94,0.5);
+}
+
+.sd-cta-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Print styles ────────────────────────────────────────── */
+@media print {
+  .sd-controls,
+  .sd-cta-btn,
+  .sd-back-btn { display: none !important; }
+  .sd-hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grievance Management — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+<style>
+.grv-priority { display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600; }
+.grv-chat { background:var(--bg);border-radius:10px;padding:14px;margin-top:12px;max-height:220px;overflow-y:auto; }
+.chat-bubble { display:flex;flex-direction:column;margin-bottom:10px; }
+.chat-bubble.farmer  .chat-text { background:#E3F2FD;color:var(--blue);border-radius:12px 12px 12px 0;align-self:flex-start; }
+.chat-bubble.bot     .chat-text { background:var(--green-light);color:var(--green-dark);border-radius:12px 12px 0 12px;align-self:flex-end; }
+.chat-bubble.officer .chat-text { background:#FFF3E0;color:var(--pending);border-radius:12px;align-self:flex-end; }
+.chat-text { padding:8px 12px;font-size:12px;line-height:1.5;max-width:80%; }
+.chat-label { font-size:10px;color:var(--text3);margin-bottom:2px; }
+.grv-respond-row { display:flex;gap:8px;margin-top:10px; }
+.grv-respond-input { flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;outline:none; }
+.grv-respond-input:focus { border-color:var(--green); }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+
+    <div class="page-heading">Grievance Management</div>
+    <div class="page-sub">Handle farmer complaints with AI-assisted classification and responses</div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-card-label">Total Grievances</div>
+        <div class="stat-card-val" id="grv-total">—</div>
+        <div class="stat-card-trend">All time</div>
+        <div class="stat-card-icon blue">📢</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Open / Filed</div>
+        <div class="stat-card-val" id="grv-open">—</div>
+        <div class="stat-card-trend down">Needs attention</div>
+        <div class="stat-card-icon amber">⚠️</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">In Progress</div>
+        <div class="stat-card-val" id="grv-progress">—</div>
+        <div class="stat-card-trend">Being handled</div>
+        <div class="stat-card-icon" style="background:#E3F2FD;">🔄</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Resolved Today</div>
+        <div class="stat-card-val" id="grv-resolved">—</div>
+        <div class="stat-card-trend">▲ +3 from yesterday</div>
+        <div class="stat-card-icon check">✅</div>
+      </div>
+    </div>
+
+    <!-- Filters + Table -->
+    <div class="admin-card" style="padding:0;margin-bottom:16px;">
+      <div class="filters-bar">
+        <div class="filter-search" style="flex:2;">
+          <span>🔍</span>
+          <input type="text" id="grv-search" placeholder="Search by GRV ID, farmer name..." oninput="filterGrievances()">
+        </div>
+        <select class="filter-select" id="filter-grv-status" onchange="filterGrievances()">
+          <option value="">All Status</option>
+          <option>Filed</option><option>Received</option><option>Assigned</option>
+          <option>Action</option><option>Resolved</option>
+        </select>
+        <select class="filter-select" id="filter-grv-priority" onchange="filterGrievances()">
+          <option value="">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select class="filter-select" id="filter-grv-cat" onchange="filterGrievances()">
+          <option value="">All Categories</option>
+          <option>Payment Issue</option><option>Delay</option>
+          <option>Technical Issue</option><option>Document</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="admin-card" style="padding:0;margin-bottom:16px;">
+      <div class="table-header">
+        <span class="table-header-title">Grievances <span id="grv-count" style="font-weight:400;color:var(--text3);font-size:12px;margin-left:6px;"></span></span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>GRV ID</th><th>Farmer</th><th>Category</th>
+              <th>Title</th><th>Priority</th><th>Status</th>
+              <th>Filed At</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="grv-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="grv-page-info">—</span>
+        <div class="page-btns" id="grv-page-btns"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Grievance Detail Modal -->
+<div class="modal-overlay" id="grv-modal">
+  <div class="modal-box" style="max-width:620px;">
+    <div class="modal-head">
+      <span id="grv-modal-title">Grievance Details</span>
+      <span class="modal-close" onclick="closeGrvModal()">✕</span>
+    </div>
+    <div class="modal-body" id="grv-modal-body" style="max-height:70vh;overflow-y:auto;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeGrvModal()">Close</button>
+      <button class="btn btn-primary" onclick="resolveGrv()">✅ Mark Resolved</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('grievances');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+let allGrv=[], filteredGrv=[], grvPage=1;
+const GRV_PER=10;
+let activeGrv=null;
+
+const PRIORITY_COLORS = { high:'#C62828', medium:'#E65100', low:'#2E7D32' };
+const AI_CATEGORIES   = { 'Payment Issue':'💰','Delay':'⏳','Technical Issue':'🔧','Document':'📄','Other':'📝','grievance_attachment':'📎' };
+
+const DEMO_GRV = [
+  { id:1, grv_number:'GRV-2026-1001', farmer_name:'Ramesh Patil',  farmer_id:'KID-MH-2026-00101', category:'Payment Issue',    title:'PM Kisan amount not received for Q4', priority:'high',   status:'Filed',    filed_at:'2026-03-28T10:00:00', description:'Payment was expected on 25th March but not credited to my account.' },
+  { id:2, grv_number:'GRV-2026-1002', farmer_name:'Sunita Devi',   farmer_id:'KID-MH-2026-00102', category:'Delay',            title:'Application pending for 45 days',     priority:'medium', status:'Assigned', filed_at:'2026-03-25T14:00:00', description:'My crop insurance application has been pending for over 45 days without any update.' },
+  { id:3, grv_number:'GRV-2026-1003', farmer_name:'Vijay Singh',   farmer_id:'KID-MH-2026-00103', category:'Technical Issue',  title:'Portal login not working on mobile',  priority:'low',    status:'Resolved', filed_at:'2026-03-20T09:00:00', description:'Unable to login to portal from mobile browser.' },
+  { id:4, grv_number:'GRV-2026-1004', farmer_name:'Anjali Desai',  farmer_id:'KID-MH-2026-00108', category:'Document',         title:'Document re-upload required but link not working', priority:'high', status:'Filed', filed_at:'2026-03-29T08:00:00', description:'Received notice to re-upload Aadhaar but the upload button is not visible.' },
+  { id:5, grv_number:'GRV-2026-1005', farmer_name:'Geeta Sharma',  farmer_id:'KID-MH-2026-00106', category:'Payment Issue',    title:'Subsidy amount mismatch',             priority:'medium', status:'Action',   filed_at:'2026-03-27T12:00:00', description:'The subsidy amount credited (₹12,000) is less than the approved amount (₹25,000).' },
+];
+
+const AI_RESPONSES = {
+  'Payment Issue': 'Your payment concern has been noted. As per our records, payments are processed within 5-7 business days. Our team will verify your bank account linkage and initiate a trace within 48 hours.',
+  'Delay':         'We apologize for the inconvenience. Applications submitted for verification are reviewed within 30 working days. Your case has been escalated for priority review.',
+  'Technical Issue':'Our technical team has been notified. Please try clearing browser cache or using a different browser. If the issue persists, please contact our helpline at 1800-300-XXXX.',
+  'Document':      'Document re-upload issues are usually resolved within 24 hours. Alternatively, you can visit your nearest Agriculture Office with physical documents.',
+  'Other':         'Thank you for contacting us. Your grievance has been assigned to our support team and will be addressed within 3 business days.',
+};
+
+async function loadGrievances() {
+  // Show demo data immediately
+  allGrv = DEMO_GRV;
+  updateStats();
+  filteredGrv = [...allGrv];
+  renderGrievances();
+  // Try real API in background
+  try {
+    const resp = await fetch(`${API}/grievances/?limit=200`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.length > 0) {
+        allGrv = data;
+        updateStats();
+        filteredGrv = [...allGrv];
+        renderGrievances();
+      }
+    }
+  } catch { /* keep demo data */ }
+}
+
+function updateStats() {
+  document.getElementById('grv-total').textContent    = allGrv.length;
+  document.getElementById('grv-open').textContent     = allGrv.filter(g=>g.status==='Filed').length;
+  document.getElementById('grv-progress').textContent = allGrv.filter(g=>['Received','Assigned','Action'].includes(g.status)).length;
+  document.getElementById('grv-resolved').textContent = allGrv.filter(g=>g.status==='Resolved').length;
+}
+
+function filterGrievances() {
+  const q   = document.getElementById('grv-search').value.toLowerCase();
+  const st  = document.getElementById('filter-grv-status').value;
+  const pri = document.getElementById('filter-grv-priority').value;
+  const cat = document.getElementById('filter-grv-cat').value;
+  filteredGrv = allGrv.filter(g => {
+    const mq  = !q   || [g.grv_number,g.farmer_name,g.title].join(' ').toLowerCase().includes(q);
+    const ms  = !st  || g.status===st;
+    const mp  = !pri || g.priority===pri;
+    const mc  = !cat || g.category===cat;
+    return mq && ms && mp && mc;
+  });
+  grvPage = 1;
+  renderGrievances();
+}
+
+function renderGrievances() {
+  const start = (grvPage-1)*GRV_PER;
+  const pg    = filteredGrv.slice(start, start+GRV_PER);
+  document.getElementById('grv-count').textContent    = `(${filteredGrv.length})`;
+  document.getElementById('grv-page-info').textContent= `${start+1}–${Math.min(start+GRV_PER,filteredGrv.length)} of ${filteredGrv.length}`;
+
+  document.getElementById('grv-tbody').innerHTML = pg.map(g => {
+    const dt    = g.filed_at ? new Date(g.filed_at).toLocaleDateString('en-IN') : '—';
+    const color = PRIORITY_COLORS[g.priority] || '#666';
+    const priHtml = `<div class="grv-priority"><span class="priority-dot" style="background:${color};"></span>${g.priority||'medium'}</div>`;
+    return `<tr>
+      <td><span class="app-id">${g.grv_number}</span></td>
+      <td>
+        <div class="farmer-name">${g.farmer_name}</div>
+        <div class="farmer-id">${g.farmer_id||'—'}</div>
+      </td>
+      <td>${AI_CATEGORIES[g.category]||'📝'} ${g.category||'Other'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.title||''}">${g.title||'—'}</td>
+      <td>${priHtml}</td>
+      <td>${statusBadge(g.status)}</td>
+      <td style="color:var(--text3);">${dt}</td>
+      <td>
+        <button class="btn-icon" onclick="openGrv(${g.id})">👁</button>
+        ${g.status!=='Resolved'?`<button class="btn-icon approve" onclick="quickResolve(${g.id})">✅</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const total = Math.ceil(filteredGrv.length/GRV_PER);
+  document.getElementById('grv-page-btns').innerHTML =
+    Array.from({length:total},(_,i)=>i+1).map(i=>
+      `<button class="page-btn ${i===grvPage?'active':''}" onclick="grvGoPage(${i})">${i}</button>`
+    ).join('');
+}
+function grvGoPage(p) { grvPage=p; renderGrievances(); }
+
+function openGrv(id) {
+  activeGrv = allGrv.find(g=>g.id===id)||DEMO_GRV.find(g=>g.id===id);
+  if (!activeGrv) return;
+  const aiReply = AI_RESPONSES[activeGrv.category] || AI_RESPONSES['Other'];
+  document.getElementById('grv-modal-title').textContent = `${activeGrv.grv_number} · ${activeGrv.category}`;
+  document.getElementById('grv-modal-body').innerHTML = `
+    <div class="alert-banner info" style="margin-bottom:14px;">
+      🤖 <strong>AI Category:</strong> ${activeGrv.category} &nbsp;·&nbsp;
+      <strong>Priority:</strong> ${activeGrv.priority} &nbsp;·&nbsp;
+      Status: <strong>${activeGrv.status}</strong>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Farmer</div>
+      <div style="font-weight:600;">${activeGrv.farmer_name} · ${activeGrv.farmer_id||'—'}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Title</div>
+      <div style="font-weight:600;">${activeGrv.title}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Description</div>
+      <div style="font-size:13px;color:var(--text2);">${activeGrv.description||'—'}</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">💬 Chatbot Conversation</div>
+    <div class="grv-chat">
+      <div class="chat-bubble farmer">
+        <div class="chat-label">👨‍🌾 ${activeGrv.farmer_name}</div>
+        <div class="chat-text">${activeGrv.description||activeGrv.title}</div>
+      </div>
+      <div class="chat-bubble bot">
+        <div class="chat-label">🤖 AI Assistant</div>
+        <div class="chat-text">${aiReply}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin:12px 0 8px;">Officer Response</div>
+    <div class="grv-respond-row">
+      <input class="grv-respond-input" id="officer-reply" placeholder="Type your response to the farmer...">
+      <button class="btn btn-primary btn-sm" onclick="sendOfficerReply()">Send</button>
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <div class="form-label">Assign To Officer</div>
+      <select class="form-select" id="assign-officer">
+        <option>— Unassigned —</option>
+        <option>Officer Sharma (Nashik)</option>
+        <option>Officer Patil (Pune)</option>
+        <option>Officer Rao (Nagpur)</option>
+      </select>
+    </div>`;
+  document.getElementById('grv-modal').classList.add('open');
+}
+
+function sendOfficerReply() {
+  const reply = document.getElementById('officer-reply')?.value?.trim();
+  if (!reply) return;
+  const chat = document.querySelector('.grv-chat');
+  if (chat) {
+    chat.innerHTML += `<div class="chat-bubble officer">
+      <div class="chat-label">👮 Officer (You)</div>
+      <div class="chat-text">${reply}</div></div>`;
+    chat.scrollTop = chat.scrollHeight;
+  }
+  document.getElementById('officer-reply').value = '';
+}
+
+async function resolveGrv() {
+  if (!activeGrv) return;
+  await updateGrvStatus(activeGrv.id, 'Resolved');
+  closeGrvModal();
+}
+async function quickResolve(id) {
+  await updateGrvStatus(id, 'Resolved');
+}
+async function updateGrvStatus(id, status) {
+  try {
+    await fetch(`${API}/grievances/${id}/status?status=${status}`, { method:'PUT' });
+  } catch {}
+  const idx = allGrv.findIndex(g=>g.id===id);
+  if (idx!==-1) allGrv[idx].status = status;
+  filteredGrv = [...allGrv];
+  updateStats();
+  renderGrievances();
+}
+function closeGrvModal() { document.getElementById('grv-modal').classList.remove('open'); }
+
+loadGrievances();
+</script>
+</body>
+</html>

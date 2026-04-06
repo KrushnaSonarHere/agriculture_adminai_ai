@@ -1,0 +1,45 @@
+/* ═══════════════════════════════════════
+   AgriPortal — Global Resets & Base
+═══════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f6f0;
+  color: #1a2e1a;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f0f6f0; }
+::-webkit-scrollbar-thumb { background: #c8ddc8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8c8a8; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,108,0,0.4); }
+  50%       { box-shadow: 0 0 16px rgba(239,108,0,0.7); }
+}
+
+.fade-in { animation: fadeIn 0.3s ease; }

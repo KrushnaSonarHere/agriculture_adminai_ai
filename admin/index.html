@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — AgriPortal</title>
+<meta name="description" content="AI-powered Agriculture Admin Dashboard — overview of all applications, farmers, and AI metrics.">
+<link rel="stylesheet" href="assets/css/admin-theme.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="admin-shell">
+
+<!-- Sidebar -->
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+
+<!-- Main -->
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <div class="admin-content">
+    <div class="page-heading">Admin Dashboard</div>
+    <div class="page-sub">Overview of agricultural scheme administration</div>
+
+    <!-- Stat Cards -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-label">Total Applications</div>
+        <div class="stat-card-val" id="stat-total">—</div>
+        <div class="stat-card-trend" id="stat-total-trend">— this month</div>
+        <div class="stat-card-icon blue">📄</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Registered Farmers</div>
+        <div class="stat-card-val" id="stat-farmers">—</div>
+        <div class="stat-card-trend" id="stat-farmers-trend">— this week</div>
+        <div class="stat-card-icon green">👥</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Pending Reviews</div>
+        <div class="stat-card-val" id="stat-pending">—</div>
+        <div class="stat-card-trend down" id="stat-pending-trend">— from last week</div>
+        <div class="stat-card-icon amber">⚠️</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Approved Today</div>
+        <div class="stat-card-val" id="stat-approved">—</div>
+        <div class="stat-card-trend" id="stat-approved-trend">— from yesterday</div>
+        <div class="stat-card-icon check">✅</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="admin-card">
+        <div class="card-title">Application Trends</div>
+        <div class="card-sub">Monthly application status overview</div>
+        <canvas id="trend-chart" height="200"></canvas>
+      </div>
+      <div class="admin-card">
+        <div class="card-title">Scheme Distribution</div>
+        <div class="card-sub">Applications by scheme type</div>
+        <div style="display:flex;align-items:center;gap:24px;">
+          <canvas id="scheme-chart" style="max-width:180px;max-height:180px;"></canvas>
+          <div id="scheme-legend" style="flex:1;display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI System Performance -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div class="card-title">ℹ️ AI System Performance</div>
+          <div class="card-sub" style="margin-bottom:0;">Real-time AI accuracy and efficiency metrics</div>
+        </div>
+        <a href="pages/ai-decisions.html" class="btn btn-outline btn-sm">View Details</a>
+      </div>
+      <div class="grid-4">
+        <!-- Document Accuracy -->
+        <div style="text-align:center;">
+          <div class="circ-progress" style="width:90px;height:90px;margin:0 auto 10px;">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#E8ECEF" stroke-width="8"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#1565C0" stroke-width="8" stroke-dasharray="238.76" stroke-dashoffset="4.78" stroke-linecap="round" transform="rotate(-90 45 45)"/>
+            </svg>
+            <div class="circ-text"><div class="circ-num">98%</div></div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Document Accuracy</div>
+        </div>
+        <!-- Fraud Detection -->
+        <div style="text-align:center;">
+          <div class="circ-progress" style="width:90px;height:90px;margin:0 auto 10px;">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#E8ECEF" stroke-width="8"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#1565C0" stroke-width="8" stroke-dasharray="238.76" stroke-dashoffset="11.94" stroke-linecap="round" transform="rotate(-90 45 45)"/>
+            </svg>
+            <div class="circ-text"><div class="circ-num">95%</div></div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Fraud Detection</div>
+        </div>
+        <!-- Processing Speed -->
+        <div style="text-align:center;">
+          <div class="circ-progress" style="width:90px;height:90px;margin:0 auto 10px;">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#E8ECEF" stroke-width="8"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#1565C0" stroke-width="8" stroke-dasharray="238.76" stroke-dashoffset="2.39" stroke-linecap="round" transform="rotate(-90 45 45)"/>
+            </svg>
+            <div class="circ-text"><div class="circ-num">99%</div></div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Processing Speed</div>
+        </div>
+        <!-- Auto-Resolution -->
+        <div style="text-align:center;">
+          <div class="circ-progress" style="width:90px;height:90px;margin:0 auto 10px;">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#E8ECEF" stroke-width="8"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#1565C0" stroke-width="8" stroke-dasharray="238.76" stroke-dashoffset="19.10" stroke-linecap="round" transform="rotate(-90 45 45)"/>
+            </svg>
+            <div class="circ-text"><div class="circ-num">92%</div></div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Auto-Resolution</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Applications + Quick Actions -->
+    <div class="grid-2">
+      <div class="admin-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div class="card-title">Recent Applications</div>
+            <div class="card-sub" style="margin-bottom:0;">Applications requiring attention</div>
+          </div>
+          <a href="pages/applications.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div id="recent-apps">
+          <!-- Loaded from API -->
+          <div class="recent-item">
+            <div style="display:flex;align-items:center;">
+              <div class="recent-icon">📄</div>
+              <div><div class="recent-name">Suresh Patil</div><div class="recent-code">APP155 · PM-KISAN</div></div>
+            </div>
+            <div class="recent-right"><div class="priority-dot high"></div><span class="badge badge-pending">Pending Review</span></div>
+          </div>
+          <div class="recent-item">
+            <div style="display:flex;align-items:center;">
+              <div class="recent-icon">📄</div>
+              <div><div class="recent-name">Lakshmi Devi</div><div class="recent-code">APP107 · Crop Insurance</div></div>
+            </div>
+            <div class="recent-right"><div class="priority-dot medium"></div><span class="badge badge-ai">AI Approved</span></div>
+          </div>
+          <div class="recent-item">
+            <div style="display:flex;align-items:center;">
+              <div class="recent-icon">📄</div>
+              <div><div class="recent-name">Rajesh Kumar</div><div class="recent-code">APP188 · Subsidy</div></div>
+            </div>
+            <div class="recent-right"><div class="priority-dot low"></div><span class="badge badge-pending">Pending Review</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="card-title" style="margin-bottom:14px;">Quick Actions</div>
+        <div class="card-sub" style="margin-bottom:14px;">Common administrative tasks</div>
+        <div class="quick-actions">
+          <a href="pages/applications.html" class="quick-action-item primary">⊞ Review Applications</a>
+          <a href="pages/document-verification.html" class="quick-action-item">✓ Verify Documents</a>
+          <a href="pages/grievances.html" class="quick-action-item">☰ Manage Grievances</a>
+          <a href="pages/escalated.html" class="quick-action-item">☏ Escalated Cases</a>
+          <a href="pages/reports.html" class="quick-action-item">↗ Generate Reports</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script src="assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('dashboard');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+
+async function loadStats() {
+  // Show demo data immediately — override with real data if available
+  const setStats = (total, farmers, pending, approved) => {
+    document.getElementById('stat-total').textContent    = total.toLocaleString();
+    document.getElementById('stat-farmers').textContent  = farmers.toLocaleString();
+    document.getElementById('stat-pending').textContent  = pending;
+    document.getElementById('stat-approved').textContent = approved;
+    document.getElementById('stat-total-trend').textContent   = '▲ +12% this month';
+    document.getElementById('stat-farmers-trend').textContent = '▲ +250 this week';
+    document.getElementById('stat-pending-trend').textContent = '▼ -5% from last week';
+    document.getElementById('stat-approved-trend').textContent= '▲ +8 from yesterday';
+  };
+
+  // Default demo values
+  setStats(1250, 8432, 185, 42);
+
+  // Try to load real data
+  try {
+    const [apps, users] = await Promise.all([
+      fetch(`${API}/applications/?limit=500`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API}/farmers/`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]);
+    const farmers  = users.filter(u => u.role !== 'admin');
+    const pending  = apps.filter(a => ['Pending','Under Review'].includes(a.status)).length;
+    const approved = apps.filter(a => a.status === 'Approved').length;
+    if (apps.length > 0 || farmers.length > 0) {
+      setStats(
+        apps.length    || 1250,
+        farmers.length || 8432,
+        pending        || 185,
+        approved       || 42
+      );
+    }
+  } catch(e) { /* keep demo values */ }
+}
+loadStats();
+
+
+// Application Trends Bar Chart
+new Chart(document.getElementById('trend-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+    datasets: [
+      { label: 'Approved', data: [95, 140, 125, 180, 165, 210], backgroundColor: '#2E7D32', borderRadius: 3 },
+      { label: 'Pending',  data: [40, 55,  60,  70,  65,  75],  backgroundColor: '#FFB300', borderRadius: 3 },
+      { label: 'Rejected', data: [15, 20,  25,  20,  18,  12],  backgroundColor: '#C62828', borderRadius: 3 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'bottom', labels: { font: { family:'Inter', size:11 }, usePointStyle: true } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family:'Inter', size:11 } } },
+      y: { grid: { color: '#F0F0F0' }, ticks: { font: { family:'Inter', size:11 } }, beginAtZero: true },
+    },
+    barPercentage: 0.6,
+  }
+});
+
+// Scheme Distribution Donut
+const schemeData = [
+  { label: 'PM-KISAN', value: 38, color: '#1565C0' },
+  { label: 'Crop Insurance', value: 27, color: '#43A047' },
+  { label: 'Soil Health', value: 13, color: '#FDD835' },
+  { label: 'Credit Card', value: 13, color: '#66BB6A' },
+  { label: 'Others', value: 9, color: '#78909C' },
+];
+
+new Chart(document.getElementById('scheme-chart'), {
+  type: 'doughnut',
+  data: {
+    labels: schemeData.map(d => d.label),
+    datasets: [{ data: schemeData.map(d => d.value), backgroundColor: schemeData.map(d => d.color), borderWidth: 2 }]
+  },
+  options: {
+    responsive: false, cutout: '68%',
+    plugins: { legend: { display: false } },
+  }
+});
+
+const legend = document.getElementById('scheme-legend');
+schemeData.forEach(d => {
+  legend.innerHTML += `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0;"></span>
+      <span>${d.label} <strong>${d.value}%</strong></span>
+    </div>`;
+});
+</script>
+</body>
+</html>

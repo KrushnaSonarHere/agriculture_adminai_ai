@@ -1,0 +1,39 @@
+Scheme_Name : Pradhan Mantri Krishi Sinchan Yojana - More Crops Per Drop (Micro Irrigation Component),
+
+Department : Dept of Agriculture,
+
+Summary"Drip irrigation is a modern method of delivering water drop by drop through a small tube to the roots of crops. In this method, the water is delivered to the crop at a rate that is slower than the rate at which water evaporates in the soil. The water is mainly delivered drop by drop. Maharashtra is the leader in drip irrigation, accounting for 60 percent of India's drip irrigation.
+
+Drip irrigation (also known as sprinkler irrigation) is a tool used to irrigate agricultural crops, lawns, landscapes, golf courses, and other areas. It is also used for cooling and for air dust control.
+ Drip irrigation is a way of using water in a controlled manner similar to rainfall. The water is distributed through a network that may include pumps, valves, pipes, and sprinklers. 
+ This irrigation can be used for residential, industrial, and agricultural purposes.
+  When water is forced through the main pipe with the help of a pump, it comes out of a rotating nozzle and is sprayed onto the crop.
+
+Grant : 
+As per the guidelines of the Central Government, the subsidy payable to the beneficiaries under the present scheme will be as follows:
+
+1) Small and marginal landholding farmers - 55%
+2) Other farmers - 45%
+
+Eligibility : 
+The farmer must have a 7/12 certificate and an 8-A certificate.
+If the farmer belongs to SC, ST caste category, then a caste certificate is required.
+If the beneficiary has availed the benefit for any particular survey number under this component before 2016-17, he will not be able to avail the benefit on that survey number for the next 10 years and if the beneficiary has availed the benefit for any particular survey number under this component after 2017-18, he will not be able to avail the benefit on that survey number for the next 7 years.
+The farmer needs a permanent electrical connection kit for an electric water pump. For this, the farmer will have to submit a recent copy of the electricity bill.
+Micro-irrigation systems should only be installed by company representatives.
+Farmers will be provided benefits up to a limit of 5 hectares of land.
+After the farmer gets pre-approval, he should purchase micro-irrigation kits from authorized vendors and distributors, install them in the field and upload the purchase receipts within 30 days of getting pre-approval.,
+
+Required_documents : 7/12 certificate
+8-A Certificate
+Electricity bill
+Bill for the purchased set
+Prior consent letter"
+
+Scheme_Name : Agricultural Mechanization Sub-Campaign,
+Department : Dept of Agriculture,
+Summary : "To promote agricultural mechanization and increase the energy consumption in agriculture up to 2 kW/ha.
+
+Objective:
+To bring the benefits of agricultural mechanization to the small and marginal farmers in areas where energy consumption in agriculture is low.
+To create awareness among the participants through demonstrations 

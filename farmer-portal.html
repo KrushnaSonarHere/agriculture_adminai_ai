@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KisanSetu — Farmer Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f6f0;
+  --bg2: #ffffff;
+  --bg3: #eef5ee;
+  --surface: #ffffff;
+  --surface2: #f0f6f0;
+  --border: #c8ddc8;
+  --green: #2e7d32;
+  --green2: #388e3c;
+  --green-dim: #1b5e20;
+  --gold: #e65100;
+  --gold2: #f57c00;
+  --amber: #ef6c00;
+  --red: #c62828;
+  --blue: #1565c0;
+  --text: #1a2e1a;
+  --text2: #2d4a2d;
+  --text3: #4a6e4a;
+  --muted: #6a8e6a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* ─── LAYOUT ─── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: 260px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.logo-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--green), var(--gold));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.logo-sub {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-left: 2px;
+}
+
+.farmer-badge {
+  margin: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.farmer-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--green-dim), var(--green));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.farmer-info { flex: 1; min-width: 0; }
+.farmer-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.farmer-id { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+nav { flex: 1; padding: 8px 12px; overflow-y: auto; }
+
+.nav-section-label {
+  font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+  color: var(--muted); padding: 12px 12px 6px; font-weight: 600;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text2);
+  position: relative;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(245,200,66,0.1));
+  color: var(--green2);
+  border: 1px solid rgba(76,175,80,0.3);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 25%; bottom: 25%;
+  width: 3px; background: var(--green2);
+  border-radius: 0 3px 3px 0;
+}
+.nav-icon { font-size: 18px; width: 22px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--amber);
+  color: #000;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  flex-shrink: 0;
+}
+
+/* ─── MAIN CONTENT ─── */
+.main {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--text);
+}
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.notif-btn {
+  position: relative;
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+  transition: all 0.2s;
+}
+.notif-btn:hover { background: var(--surface2); border-color: var(--green); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px;
+  background: var(--amber);
+  border-radius: 50%;
+  border: 2px solid var(--bg2);
+}
+
+.page { display: none; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-content { padding: 32px; max-width: 1200px; }
+
+/* ─── CARDS / COMMON ─── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.card-sm {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.section-sub { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+/* ─── STAT CARDS ─── */
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); border-color: var(--green); }
+.stat-card::after {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  opacity: 0.06;
+  transform: translate(30%, -30%);
+}
+.stat-card.green::after { background: var(--green); }
+.stat-card.gold::after { background: var(--gold); }
+.stat-card.amber::after { background: var(--amber); }
+.stat-card.blue::after { background: var(--blue); }
+
+.stat-icon { font-size: 24px; margin-bottom: 10px; }
+.stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 700;
+  color: var(--text); margin-bottom: 4px;
+}
+.stat-label { font-size: 12px; color: var(--text3); font-weight: 500; letter-spacing: 0.5px; }
+.stat-trend {
+  margin-top: 8px; font-size: 12px; color: var(--green2);
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--green), #388e3c);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(76,175,80,0.3);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--green2), var(--green));
+  box-shadow: 0 6px 20px rgba(76,175,80,0.4);
+  transform: translateY(-1px);
+}
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #e6a800);
+  color: #000; font-weight: 700;
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,200,66,0.4); }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-outline:hover { border-color: var(--green); color: var(--green2); background: rgba(76,175,80,0.05); }
+.btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
+.btn-danger { background: rgba(239,83,80,0.15); color: var(--red); border: 1px solid rgba(239,83,80,0.3); }
+
+/* ─── TAGS / BADGES ─── */
+.tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+}
+.tag-pending { background: rgba(255,143,0,0.15); color: var(--amber); border: 1px solid rgba(255,143,0,0.3); }
+.tag-approved { background: rgba(76,175,80,0.15); color: var(--green2); border: 1px solid rgba(76,175,80,0.3); }
+.tag-rejected { background: rgba(239,83,80,0.15); color: var(--red); border: 1px solid rgba(239,83,80,0.3); }
+.tag-processing { background: rgba(66,165,245,0.15); color: var(--blue); border: 1px solid rgba(66,165,245,0.3); }
+.tag-submitted { background: rgba(245,200,66,0.15); color: var(--gold); border: 1px solid rgba(245,200,66,0.3); }
+
+/* ─── FORMS ─── */
+.form-group { margin-bottom: 18px; }
+.form-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--text2);
+  margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+}
+.form-select option { background: var(--bg3); }
+.form-textarea { min-height: 100px; resize: vertical; }
+
+/* ─── SCHEME CATEGORIES ─── */
+.category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+.category-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.category-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.category-card:hover { transform: translateY(-3px); }
+.category-card.selected { border-color: var(--green); background: rgba(76,175,80,0.08); }
+.category-card.selected::after {
+  content: '✓';
+  position: absolute; top: 8px; right: 10px;
+  font-size: 12px; color: var(--green2);
+  background: rgba(76,175,80,0.2);
+  width: 20px; height: 20px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.cat-icon { font-size: 32px; margin-bottom: 8px; }
+.cat-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.cat-count { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/* ─── SCHEME LIST CARDS ─── */
+.scheme-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.scheme-card:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.scheme-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.scheme-name { font-size: 15px; font-weight: 700; color: var(--text); font-family: 'Playfair Display', serif; }
+.scheme-dept { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.scheme-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px; font-weight: 600; color: var(--gold);
+  white-space: nowrap;
+}
+.scheme-desc { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 14px; }
+.scheme-footer { display: flex; align-items: center; justify-content: space-between; }
+.scheme-deadline { font-size: 11px; color: var(--amber); display: flex; align-items: center; gap: 4px; }
+.scheme-eligibility { display: flex; gap: 6px; flex-wrap: wrap; }
+.elig-tag {
+  background: rgba(76,175,80,0.1);
+  border: 1px solid rgba(76,175,80,0.2);
+  color: var(--text2); font-size: 10px; font-weight: 500;
+  padding: 3px 8px; border-radius: 20px;
+}
+
+/* ─── PROGRESS TRACKER ─── */
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+.timeline::before {
+  content: '';
+  position: absolute; left: 10px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--border);
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 24px;
+}
+.timeline-dot {
+  position: absolute; left: -28px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg);
+  top: 3px;
+  z-index: 1;
+}
+.timeline-dot.done { background: var(--green); box-shadow: 0 0 8px rgba(76,175,80,0.5); }
+.timeline-dot.active { background: var(--amber); box-shadow: 0 0 8px rgba(255,143,0,0.5); animation: pulse 2s infinite; }
+.timeline-dot.pending { background: var(--border); }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 8px rgba(255,143,0,0.5); } 50% { box-shadow: 0 0 16px rgba(255,143,0,0.8); } }
+.timeline-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.timeline-date { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.timeline-note { font-size: 12px; color: var(--text2); margin-top: 4px; padding: 8px 12px; background: var(--bg3); border-radius: 8px; border-left: 3px solid var(--green); }
+
+/* ─── TABS ─── */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.tab {
+  padding: 10px 18px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border-radius: 8px 8px 0 0;
+  color: var(--text3); transition: all 0.2s;
+  border: 1px solid transparent; border-bottom: none;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--green2); border-color: var(--border) var(--border) var(--bg); background: var(--bg); border-bottom: 1px solid var(--bg); }
+
+/* ─── TABLE ─── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text3); padding: 10px 14px; border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.data-table td { padding: 14px; border-bottom: 1px solid rgba(45,64,41,0.5); font-size: 13px; color: var(--text2); }
+.data-table tr:hover td { background: rgba(76,175,80,0.04); }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ─── ALERT BANNER ─── */
+.alert {
+  border-radius: 10px; padding: 12px 16px;
+  font-size: 13px; display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 16px;
+}
+.alert-warning { background: rgba(255,143,0,0.1); border: 1px solid rgba(255,143,0,0.3); color: #ffcc80; }
+.alert-success { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3); color: #a5d6a7; }
+.alert-info { background: rgba(66,165,245,0.1); border: 1px solid rgba(66,165,245,0.3); color: #90caf9; }
+.alert-error { background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.3); color: #ef9a9a; }
+.alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ─── REPORT CHART ─── */
+.chart-bar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.chart-bar-label { font-size: 12px; color: var(--text2); width: 120px; flex-shrink: 0; }
+.chart-bar-track {
+  flex: 1; height: 10px; background: var(--bg3);
+  border-radius: 20px; overflow: hidden;
+}
+.chart-bar-fill {
+  height: 100%; border-radius: 20px;
+  transition: width 1.5s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.chart-bar-val { font-size: 11px; color: var(--text3); width: 36px; text-align: right; font-family: 'DM Mono', monospace; }
+
+/* ─── NOTIFICATION PANEL ─── */
+.notif-panel {
+  position: fixed; right: 24px; top: 80px; width: 340px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; z-index: 200;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  display: none;
+  overflow: hidden;
+}
+.notif-panel.open { display: block; animation: slideIn 0.2s ease; }
+@keyframes slideIn { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+.notif-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.notif-title-text { font-size: 14px; font-weight: 700; }
+.notif-clear { font-size: 11px; color: var(--text3); cursor: pointer; }
+.notif-clear:hover { color: var(--green2); }
+.notif-item { padding: 14px 20px; border-bottom: 1px solid rgba(45,64,41,0.5); display: flex; gap: 12px; align-items: flex-start; cursor: pointer; transition: background 0.15s; }
+.notif-item:hover { background: var(--surface); }
+.notif-item.unread { border-left: 3px solid var(--amber); }
+.notif-item-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.notif-item-body { flex: 1; }
+.notif-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.notif-item-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.notif-item-time { font-size: 10px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); display: none;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; width: 90%; max-width: 540px; max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 24px 28px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+.modal-close { font-size: 20px; cursor: pointer; color: var(--text3); line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.modal-close:hover { background: var(--surface); color: var(--text); }
+.modal-body { padding: 20px 28px 28px; }
+.modal-footer { padding: 16px 28px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ─── SEARCH BAR ─── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 16px; margin-bottom: 20px;
+}
+.search-bar input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+}
+.search-bar input::placeholder { color: var(--muted); }
+.search-icon { color: var(--muted); font-size: 16px; }
+
+/* ─── PROGRESS RING ─── */
+.progress-ring-container { display: flex; align-items: center; justify-content: center; }
+.progress-ring { transform: rotate(-90deg); }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ─── UPLOAD ZONE ─── */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 24px; text-align: center; cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-zone:hover { border-color: var(--green); background: rgba(76,175,80,0.04); }
+.upload-zone p { font-size: 13px; color: var(--text3); margin-top: 8px; }
+
+/* ─── DIVIDER ─── */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* ─── ANNOUNCEMENT RIBBON ─── */
+.ribbon {
+  background: linear-gradient(90deg, rgba(245,200,66,0.12), rgba(76,175,80,0.12));
+  border: 1px solid rgba(245,200,66,0.2);
+  border-radius: 10px; padding: 12px 18px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+.ribbon-icon { font-size: 20px; flex-shrink: 0; }
+.ribbon-text { font-size: 13px; color: var(--text2); flex: 1; }
+.ribbon-text strong { color: var(--gold2); }
+.ribbon-cta { font-size: 12px; color: var(--green2); cursor: pointer; font-weight: 600; white-space: nowrap; }
+.ribbon-cta:hover { text-decoration: underline; }
+
+/* ─── GRIEVANCE STATUS TRACKER ─── */
+.grievance-stepper {
+  display: flex; gap: 0; align-items: center;
+  margin: 20px 0;
+}
+.step-item { flex: 1; text-align: center; position: relative; }
+.step-item:not(:last-child)::after {
+  content: ''; position: absolute; top: 14px; left: 50%; right: -50%;
+  height: 2px; background: var(--border); z-index: 0;
+}
+.step-item.done:not(:last-child)::after { background: var(--green); }
+.step-circle {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg3); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; margin: 0 auto 6px; position: relative; z-index: 1;
+}
+.step-item.done .step-circle { background: var(--green); border-color: var(--green); }
+.step-item.active .step-circle { background: var(--amber); border-color: var(--amber); animation: pulse 2s infinite; }
+.step-label { font-size: 10px; color: var(--text3); font-weight: 500; }
+.step-item.done .step-label { color: var(--green2); }
+.step-item.active .step-label { color: var(--amber); }
+
+/* ─── MOBILE TOPBAR ─── */
+.mobile-menu-btn {
+  display: none; width: 38px; height: 38px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+}
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .mobile-menu-btn { display: flex; }
+  .category-grid, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .page-content { padding: 20px; }
+}
+@media (max-width: 600px) {
+  .category-grid, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .topbar-title { font-size: 16px; }
+}
+
+/* Empty state */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text3); }
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; color: var(--text3); }
+
+/* Success confetti dots */
+.success-banner {
+  background: linear-gradient(135deg, rgba(76,175,80,0.15), rgba(245,200,66,0.08));
+  border: 1px solid rgba(76,175,80,0.4);
+  border-radius: 14px; padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+}
+.success-icon { font-size: 36px; }
+.success-title { font-size: 16px; font-weight: 700; color: var(--green2); }
+.success-body { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+/* Floating action button */
+.fab {
+  position: fixed; bottom: 32px; right: 32px;
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--green), #388e3c);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(76,175,80,0.4);
+  z-index: 99; transition: transform 0.2s;
+  display: none;
+}
+.fab:hover { transform: scale(1.1); }
+/* â”€â”€â”€ LIGHT THEME OVERRIDES â”€â”€â”€ */
+body { background: #f0f6f0; }
+.sidebar {
+  background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 60%, #388e3c 100%) !important;
+  border-right-color: #1b5e20 !important;
+}
+.sidebar-logo { border-bottom: 1px solid rgba(255,255,255,0.15) !important; }
+.logo-text { color: #ffffff !important; }
+.logo-sub { color: rgba(255,255,255,0.65) !important; }
+.farmer-badge { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.2) !important; }
+.farmer-name { color: #ffffff !important; }
+.farmer-id { color: rgba(255,255,255,0.65) !important; }
+.nav-section-label { color: rgba(255,255,255,0.45) !important; }
+.nav-item { color: rgba(255,255,255,0.8) !important; }
+.nav-item:hover { background: rgba(255,255,255,0.12) !important; color: #ffffff !important; }
+.nav-item.active { background: rgba(255,255,255,0.18) !important; color: #ffffff !important; border-color: rgba(255,255,255,0.3) !important; }
+.nav-item.active::before { background: #a5d6a7 !important; }
+.sidebar-footer { border-top-color: rgba(255,255,255,0.15) !important; color: rgba(255,255,255,0.55) !important; }
+.topbar { background: #2e7d32 !important; border-bottom-color: #1b5e20 !important; }
+.topbar-title { color: #ffffff !important; }
+.notif-btn { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; }
+.notif-btn:hover { background: rgba(255,255,255,0.25) !important; border-color: rgba(255,255,255,0.4) !important; }
+.card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-color: #d4e8d4; }
+.stat-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-color: #d4e8d4; }
+.stat-card:hover { border-color: var(--green) !important; }
+.stat-val { color: #1a2e1a; }
+.scheme-card { border-color: #d4e8d4; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.scheme-card:hover { box-shadow: 0 8px 24px rgba(46,125,50,0.15); }
+.tabs { border-bottom-color: #d4e8d4; }
+.tab.active { color: #2e7d32 !important; }
+.notif-panel { background: #ffffff !important; border-color: #d4e8d4 !important; box-shadow: 0 20px 60px rgba(0,0,0,0.12) !important; }
+.notif-item { border-bottom-color: #e8f5e8 !important; }
+.notif-item.unread { border-left-color: #ef6c00 !important; }
+.modal { background: #ffffff !important; border-color: #d4e8d4 !important; }
+.modal-footer { border-top-color: #e8f5e8 !important; }
+.section-title { color: #1a2e1a; }
+.data-table th { color: #4a6e4a; border-bottom-color: #d4e8d4; }
+.data-table td { border-bottom-color: #eef5ee; color: #2d4a2d; }
+.data-table tr:hover td { background: rgba(46,125,50,0.04); }
+.ribbon { background: linear-gradient(90deg, rgba(46,125,50,0.08), rgba(230,81,0,0.06)); border-color: rgba(46,125,50,0.2); }
+.ribbon-text strong { color: #e65100; }
+.btn-primary { background: linear-gradient(135deg, #2e7d32, #1b5e20); box-shadow: 0 4px 16px rgba(46,125,50,0.25); }
+.btn-primary:hover { background: linear-gradient(135deg, #388e3c, #2e7d32); box-shadow: 0 6px 20px rgba(46,125,50,0.35); }
+.btn-gold { background: linear-gradient(135deg, #ef6c00, #e65100); color: #fff !important; }
+.btn-outline { border-color: #c8ddc8; color: #2d4a2d; }
+.btn-outline:hover { border-color: #2e7d32; color: #2e7d32; background: rgba(46,125,50,0.05); }
+.form-input, .form-select, .form-textarea { background: #f8fdf8; border-color: #c8ddc8; color: #1a2e1a; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+.upload-zone { border-color: #c8ddc8; }
+.upload-zone:hover { border-color: #2e7d32; background: rgba(46,125,50,0.04); }
+.tag-approved { background: rgba(46,125,50,0.1); color: #1b5e20; border-color: rgba(46,125,50,0.3); }
+.tag-pending { background: rgba(239,108,0,0.1); color: #bf360c; border-color: rgba(239,108,0,0.3); }
+.tag-rejected { background: rgba(198,40,40,0.1); color: #b71c1c; border-color: rgba(198,40,40,0.3); }
+.tag-processing { background: rgba(21,101,192,0.1); color: #0d47a1; border-color: rgba(21,101,192,0.3); }
+.tag-submitted { background: rgba(239,108,0,0.1); color: #e65100; border-color: rgba(239,108,0,0.3); }
+.alert-warning { background: rgba(239,108,0,0.08); border-color: rgba(239,108,0,0.3); color: #bf360c; }
+.alert-success { background: rgba(46,125,50,0.08); border-color: rgba(46,125,50,0.3); color: #1b5e20; }
+.alert-info { background: rgba(21,101,192,0.08); border-color: rgba(21,101,192,0.3); color: #0d47a1; }
+.alert-error { background: rgba(198,40,40,0.08); border-color: rgba(198,40,40,0.3); color: #b71c1c; }
+.success-banner { background: linear-gradient(135deg, rgba(46,125,50,0.08), rgba(239,108,0,0.05)); border-color: rgba(46,125,50,0.3); }
+.success-title { color: #2e7d32; }
+.empty-state { color: #4a6e4a; }
+.chart-bar-track { background: #e8f5e8; }
+.search-bar { background: #ffffff; border-color: #c8ddc8; }
+::-webkit-scrollbar-track { background: #f0f6f0; }
+::-webkit-scrollbar-thumb { background: #c8ddc8; }
+::-webkit-scrollbar-thumb:hover { background: #a8c8a8; }
+.category-card { background: #ffffff; border-color: #d4e8d4; }
+.category-card.selected { border-color: #2e7d32; background: rgba(46,125,50,0.06); }
+.cat-name { color: #1a2e1a; }
+.stat-card.green::after { background: #2e7d32; }
+.timeline::before { background: #d4e8d4; }
+.timeline-dot { background: #d4e8d4; border-color: #f0f6f0; }
+.grievance-stepper .step-item:not(:last-child)::after { background: #d4e8d4; }
+.step-circle { background: #eef5ee; border-color: #d4e8d4; }
+.header-hero { background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">🌾</div>
+      <span class="logo-text">KisanSetu</span>
+    </div>
+    <div class="logo-sub">Farmer Service Portal</div>
+  </div>
+
+  <div class="farmer-badge">
+    <div class="farmer-avatar">👨‍🌾</div>
+    <div class="farmer-info">
+      <div class="farmer-name">Ramesh Patil</div>
+      <div class="farmer-id">KID-MH-2024-04821</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard', this)">
+      <span class="nav-icon">🏡</span> Dashboard
+    </div>
+
+    <div class="nav-section-label">Apply</div>
+    <div class="nav-item" onclick="navigate('schemes', this)">
+      <span class="nav-icon">📋</span> Schemes
+    </div>
+    <div class="nav-item" onclick="navigate('subsidies', this)">
+      <span class="nav-icon">💰</span> Subsidies
+    </div>
+    <div class="nav-item" onclick="navigate('insurance', this)">
+      <span class="nav-icon">🛡️</span> Insurance
+    </div>
+
+    <div class="nav-section-label">Track</div>
+    <div class="nav-item" onclick="navigate('applications', this)">
+      <span class="nav-icon">📁</span> My Applications
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="navigate('grievance', this)">
+      <span class="nav-icon">📢</span> Grievances
+      <span class="nav-badge">1</span>
+    </div>
+    <div class="nav-item" onclick="navigate('reports', this)">
+      <span class="nav-icon">📊</span> Reports
+    </div>
+
+    <div class="nav-section-label">Account</div>
+    <div class="nav-item" onclick="navigate('profile', this)">
+      <span class="nav-icon">👤</span> My Profile
+    </div>
+    <div class="nav-item" onclick="navigate('documents', this)">
+      <span class="nav-icon">📄</span> My Documents
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="status-dot"></span>
+    Portal Online · <span id="live-time" style="font-family:'DM Mono',monospace;font-size:10px;"></span>
+  </div>
+</aside>
+
+<!-- ─── MAIN ─── -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</div>
+      <div class="topbar-title" id="page-title">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;">
+        <span>🌦️</span> 28°C · Nashik
+      </div>
+      <div class="notif-btn" onclick="toggleNotif()">
+        🔔 <span class="notif-dot"></span>
+      </div>
+      <div style="width:36px;height:36px;background:var(--green-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">👨‍🌾</div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── DASHBOARD ─────────────────────────── -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-content">
+
+      <!-- Hero Banner -->
+      <div style="background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 50%,#33691e 100%);border-radius:20px;padding:36px 40px;margin-bottom:28px;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;top:-20px;width:220px;height:220px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
+        <div style="position:absolute;right:60px;bottom:-40px;width:150px;height:150px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:6px;letter-spacing:0.5px;">🌾 KisanSetu Farmer Portal</div>
+        <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:#ffffff;margin-bottom:6px;line-height:1.2;">Welcome back, <br>Ramesh Patil! 👨‍🌾</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-bottom:24px;">Your farm services overview for Sunday, 29 March 2026</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(4px);" onclick="navigate('schemes', null)">🌾 Apply for Scheme</button>
+          <button class="btn" style="background:#ffffff;color:#2e7d32;font-weight:700;" onclick="navigate('applications', null)">📁 Track Applications</button>
+        </div>
+        <div style="position:absolute;right:32px;top:50%;transform:translateY(-50%);font-size:80px;opacity:0.12;">🌱</div>
+      </div>
+
+      <!-- Announcement ribbon -->
+      <div class="ribbon" style="margin-bottom:24px;">
+        <span class="ribbon-icon">📣</span>
+        <div class="ribbon-text"><strong>PM Kisan 18th Installment</strong> disbursement begins April 5, 2026. Ensure your Aadhaar is linked.</div>
+        <span class="ribbon-cta" onclick="navigate('schemes', document.querySelector('.nav-item:nth-child(5)'))">Apply Now →</span>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:28px;">
+        <div class="stat-card green">
+          <div class="stat-icon">📋</div>
+          <div class="stat-val">5</div>
+          <div class="stat-label">Total Applications</div>
+          <div class="stat-trend">▲ 2 this month</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon">✅</div>
+          <div class="stat-val">2</div>
+          <div class="stat-label">Approved</div>
+          <div class="stat-trend" style="color:var(--gold);">₹18,500 received</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-val">3</div>
+          <div class="stat-label">Pending Review</div>
+          <div class="stat-trend" style="color:var(--amber);">Action needed</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">📢</div>
+          <div class="stat-val">1</div>
+          <div class="stat-label">Open Grievances</div>
+          <div class="stat-trend" style="color:var(--blue);">In progress</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:28px;">
+        <!-- Recent Activity -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-size:15px;font-weight:700;color:var(--text);">Recent Activity</div>
+            <span class="btn btn-outline btn-sm" onclick="navigate('applications', null)">View All</span>
+          </div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot done"></div>
+              <div class="timeline-title">PM Kisan Scheme — Approved ✅</div>
+              <div class="timeline-date">25 Mar 2026 · ₹6,000 credited</div>
+              <div class="timeline-note">Amount disbursed to your linked bank account ending ••4821</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot active"></div>
+              <div class="timeline-title">Soil Health Card — Under Review</div>
+              <div class="timeline-date">20 Mar 2026 · Pending field verification</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot pending"></div>
+              <div class="timeline-title">Drip Irrigation Subsidy — Submitted</div>
+              <div class="timeline-date">15 Mar 2026 · Awaiting document check</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Quick Apply</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <button class="btn btn-primary" style="justify-content:center;" onclick="navigate('schemes', null)">🌾 New Scheme</button>
+              <button class="btn btn-gold" style="justify-content:center;" onclick="navigate('subsidies', null)">💰 Subsidy</button>
+              <button class="btn btn-outline" style="justify-content:center;" onclick="navigate('grievance', null)">📢 Grievance</button>
+              <button class="btn btn-outline" style="justify-content:center;" onclick="navigate('insurance', null)">🛡️ Insurance</button>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-size:15px;font-weight:700;margin-bottom:14px;">My Farm Profile</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+              <div style="color:var(--text3);">Land Area</div><div style="color:var(--text);font-weight:600;">3.5 Acres</div>
+              <div style="color:var(--text3);">Crop Type</div><div style="color:var(--text);font-weight:600;">Wheat, Onion</div>
+              <div style="color:var(--text3);">District</div><div style="color:var(--text);font-weight:600;">Nashik, MH</div>
+              <div style="color:var(--text3);">Category</div><div style="color:var(--text);font-weight:600;"><span class="tag tag-processing">Small Farmer</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Eligible Schemes -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;">AI-Recommended Schemes</div>
+            <div style="font-size:12px;color:var(--text3);">Based on your land profile and eligibility</div>
+          </div>
+          <span class="tag tag-processing">🤖 AI Matched</span>
+        </div>
+        <div class="grid-3">
+          <div class="scheme-card" onclick="openApplyModal('PM Fasal Bima Yojana', '₹25,000')">
+            <div class="scheme-header">
+              <div><div class="scheme-name">PM Fasal Bima</div><div class="scheme-dept">Agriculture Ministry</div></div>
+              <div class="scheme-amount">₹25,000</div>
+            </div>
+            <div class="scheme-desc">Crop insurance coverage for wheat farmers during Rabi season 2026.</div>
+            <div class="scheme-footer">
+              <span class="scheme-deadline">⏰ Deadline: Apr 15</span>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('PM Fasal Bima', '₹25,000')">Apply</button>
+            </div>
+          </div>
+          <div class="scheme-card" onclick="openApplyModal('PMKSY Micro Irrigation', '₹15,000')">
+            <div class="scheme-header">
+              <div><div class="scheme-name">PMKSY Irrigation</div><div class="scheme-dept">Jal Shakti Ministry</div></div>
+              <div class="scheme-amount">₹15,000</div>
+            </div>
+            <div class="scheme-desc">Drip and sprinkler irrigation systems subsidy for small farmers.</div>
+            <div class="scheme-footer">
+              <span class="scheme-deadline">⏰ Deadline: May 1</span>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('PMKSY Irrigation', '₹15,000')">Apply</button>
+            </div>
+          </div>
+          <div class="scheme-card" onclick="openApplyModal('Kisan Credit Card', 'Up to ₹3L')">
+            <div class="scheme-header">
+              <div><div class="scheme-name">Kisan Credit Card</div><div class="scheme-dept">NABARD</div></div>
+              <div class="scheme-amount">Up to ₹3L</div>
+            </div>
+            <div class="scheme-desc">Low-interest credit for crop cultivation, harvest and allied activities.</div>
+            <div class="scheme-footer">
+              <span class="scheme-deadline">⏰ Open Enrollment</span>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Kisan Credit Card', 'Up to ₹3L')">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── SCHEMES ─────────────────────────── -->
+  <div id="page-schemes" class="page">
+    <div class="page-content">
+      <div class="section-title">Government Schemes</div>
+      <div class="section-sub">Browse and apply for Central & State agriculture schemes</div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search schemes by name, department, crop type..." id="scheme-search" oninput="filterSchemes()">
+      </div>
+
+      <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px;">Browse by Category</div>
+      <div class="category-grid" id="category-grid">
+        <div class="category-card selected" onclick="filterByCategory(this, 'all')">
+          <div class="cat-icon">🌐</div>
+          <div class="cat-name">All Schemes</div>
+          <div class="cat-count">24 schemes</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'crop')">
+          <div class="cat-icon">🌾</div>
+          <div class="cat-name">Crop Support</div>
+          <div class="cat-count">8 schemes</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'irrigation')">
+          <div class="cat-icon">💧</div>
+          <div class="cat-name">Irrigation</div>
+          <div class="cat-count">5 schemes</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'soil')">
+          <div class="cat-icon">🪱</div>
+          <div class="cat-name">Soil & Fertiliser</div>
+          <div class="cat-count">4 schemes</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'tech')">
+          <div class="cat-icon">🚜</div>
+          <div class="cat-name">Farm Machinery</div>
+          <div class="cat-count">4 schemes</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'training')">
+          <div class="cat-icon">📚</div>
+          <div class="cat-name">Training & Credit</div>
+          <div class="cat-count">3 schemes</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:600;color:var(--text2);">Available Schemes <span style="color:var(--text3);font-weight:400;">(24)</span></div>
+        <div style="display:flex;gap:8px;">
+          <select class="form-select" style="width:auto;padding:6px 10px;font-size:12px;">
+            <option>Sort: Deadline</option>
+            <option>Sort: Amount</option>
+            <option>Sort: Name</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="scheme-list" style="display:flex;flex-direction:column;gap:12px;">
+        <!-- Scheme rows generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── SUBSIDIES ─────────────────────────── -->
+  <div id="page-subsidies" class="page">
+    <div class="page-content">
+      <div class="section-title">Subsidies</div>
+      <div class="section-sub">Input subsidies, equipment subsidies, and financial support programs</div>
+
+      <div class="category-grid">
+        <div class="category-card selected" onclick="filterByCategory(this, 'all')">
+          <div class="cat-icon">💰</div><div class="cat-name">All Subsidies</div><div class="cat-count">18 active</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'seed')">
+          <div class="cat-icon">🌱</div><div class="cat-name">Seeds & Inputs</div><div class="cat-count">5 subsidies</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'equipment')">
+          <div class="cat-icon">⚙️</div><div class="cat-name">Equipment</div><div class="cat-count">4 subsidies</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'energy')">
+          <div class="cat-icon">⚡</div><div class="cat-name">Energy</div><div class="cat-count">3 subsidies</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'water')">
+          <div class="cat-icon">💦</div><div class="cat-name">Water & Irrigation</div><div class="cat-count">4 subsidies</div>
+        </div>
+        <div class="category-card" onclick="filterByCategory(this, 'storage')">
+          <div class="cat-icon">🏪</div><div class="cat-name">Storage & Market</div><div class="cat-count">2 subsidies</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:14px;">
+        <div class="scheme-card" onclick="openApplyModal('Fertiliser Subsidy', '₹4,200')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Fertiliser Subsidy 2026</div><div class="scheme-dept">Dept. of Agriculture</div></div>
+            <div class="scheme-amount">₹4,200</div>
+          </div>
+          <div class="scheme-desc">Direct benefit transfer for urea and DAP procurement by small and marginal farmers.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">≤5 Acres</span><span class="elig-tag">Any Crop</span></div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Fertiliser Subsidy', '₹4,200')">Apply</button>
+          </div>
+        </div>
+
+        <div class="scheme-card" onclick="openApplyModal('Solar Pump Subsidy', '₹32,000')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Solar Pump Subsidy</div><div class="scheme-dept">MNRE / State Govt</div></div>
+            <div class="scheme-amount">₹32,000</div>
+          </div>
+          <div class="scheme-desc">70% subsidy on solar-powered agricultural pumps. Reduce electricity dependency.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">Any Land Size</span><span class="elig-tag">OBC/SC/ST Priority</span></div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Solar Pump Subsidy', '₹32,000')">Apply</button>
+          </div>
+        </div>
+
+        <div class="scheme-card" onclick="openApplyModal('Seed Mini Kit', 'Free Kit')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Seed Mini Kit Programme</div><div class="scheme-dept">State Agriculture Dept</div></div>
+            <div class="scheme-amount">Free Kit</div>
+          </div>
+          <div class="scheme-desc">High-yield variety seed kits distributed free to registered farmers for Kharif 2026.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">Registered Farmers</span></div>
+            <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();openApplyModal('Seed Mini Kit', 'Free')">Claim</button>
+          </div>
+        </div>
+
+        <div class="scheme-card" onclick="openApplyModal('Tractor Subsidy', '₹60,000')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Tractor Purchase Subsidy</div><div class="scheme-dept">SMAM Scheme</div></div>
+            <div class="scheme-amount">₹60,000</div>
+          </div>
+          <div class="scheme-desc">40% subsidy on purchase of new tractors and power tillers for small farmers.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">≤2 Hectares</span><span class="elig-tag">SC/ST Priority</span></div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Tractor Subsidy', '₹60,000')">Apply</button>
+          </div>
+        </div>
+
+        <div class="scheme-card" onclick="openApplyModal('Cold Storage Subsidy', '₹2,00,000')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Cold Storage Subsidy</div><div class="scheme-dept">NHB / MoA&FW</div></div>
+            <div class="scheme-amount">₹2,00,000</div>
+          </div>
+          <div class="scheme-desc">Subsidy for setting up small-scale cold chain and ripening chambers for horticulture produce.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">Horticulture</span><span class="elig-tag">FPO Members</span></div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Cold Storage Subsidy', '₹2,00,000')">Apply</button>
+          </div>
+        </div>
+
+        <div class="scheme-card" onclick="openApplyModal('Drip Irrigation', '₹18,000')">
+          <div class="scheme-header">
+            <div><div class="scheme-name">Drip Irrigation Setup</div><div class="scheme-dept">PMKSY</div></div>
+            <div class="scheme-amount">₹18,000</div>
+          </div>
+          <div class="scheme-desc">Subsidy for micro-irrigation drip system installation per hectare for water saving.</div>
+          <div class="scheme-footer">
+            <div class="scheme-eligibility"><span class="elig-tag">Per Hectare</span><span class="elig-tag">Any Crop</span></div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('Drip Irrigation', '₹18,000')">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── INSURANCE ─────────────────────────── -->
+  <div id="page-insurance" class="page">
+    <div class="page-content">
+      <div class="section-title">Crop Insurance</div>
+      <div class="section-sub">Protect your crops from natural calamities, drought, and pest damage</div>
+
+      <div class="alert alert-info" style="margin-bottom:20px;">
+        <span class="alert-icon">ℹ️</span>
+        <span>Rabi 2025-26 insurance enrollment is open until <strong>April 15, 2026</strong>. Enroll your wheat and gram crops now.</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="border-color:var(--green);background:linear-gradient(135deg,rgba(76,175,80,0.08),transparent);">
+          <div style="font-size:28px;margin-bottom:8px;">🌾</div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px;">PM Fasal Bima Yojana</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Central Government · Rabi Season</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;">Comprehensive coverage for all notified crops. Premium as low as 1.5% for Rabi crops. Coverage up to full sum insured.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:16px;">
+            <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+              <div style="color:var(--text3);">Max Coverage</div>
+              <div style="color:var(--gold);font-weight:700;font-size:15px;">₹25,000</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+              <div style="color:var(--text3);">Your Premium</div>
+              <div style="color:var(--green2);font-weight:700;font-size:15px;">₹375</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="openApplyModal('PM Fasal Bima Yojana', '₹25,000 coverage')">Apply for Coverage</button>
+        </div>
+
+        <div class="card">
+          <div style="font-size:28px;margin-bottom:8px;">🌧️</div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px;">Restructured WBCIS</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Weather-Based Crop Insurance</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;">Automatic payout triggered by weather parameters (rainfall, temperature) — no need to file claims manually.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:16px;">
+            <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+              <div style="color:var(--text3);">Max Coverage</div>
+              <div style="color:var(--gold);font-weight:700;font-size:15px;">₹20,000</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+              <div style="color:var(--text3);">Your Premium</div>
+              <div style="color:var(--green2);font-weight:700;font-size:15px;">₹300</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="openApplyModal('WBCIS', '₹20,000 coverage')">Apply for Coverage</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Your Active Policies</div>
+        <div class="empty-state">
+          <div class="empty-state-icon">🔒</div>
+          <p>No active insurance policies. Apply above to protect your crops.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── MY APPLICATIONS ─────────────────────────── -->
+  <div id="page-applications" class="page">
+    <div class="page-content">
+      <div class="section-title">My Applications</div>
+      <div class="section-sub">Track status of all your scheme, subsidy, and insurance applications in real-time</div>
+
+      <div class="alert alert-warning" style="margin-bottom:20px;">
+        <span class="alert-icon">⚠️</span>
+        <span><strong>Action Required:</strong> Your Soil Health Card application needs additional land documents. <a href="#" style="color:var(--amber);text-decoration:underline;" onclick="openTrackModal(1)">Upload now →</a></span>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="filterApps('all', this)">All (5)</div>
+        <div class="tab" onclick="filterApps('pending', this)">Pending (3)</div>
+        <div class="tab" onclick="filterApps('approved', this)">Approved (2)</div>
+        <div class="tab" onclick="filterApps('rejected', this)">Rejected (0)</div>
+      </div>
+
+      <div id="app-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── GRIEVANCE ─────────────────────────── -->
+  <div id="page-grievance" class="page">
+    <div class="page-content">
+      <div class="section-title">Grievances</div>
+      <div class="section-sub">File, track, and resolve your complaints regarding government services</div>
+
+      <div class="grid-2" style="margin-bottom:24px;">
+        <!-- File Grievance -->
+        <div class="card">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">File a New Grievance</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">AI-assisted routing ensures your complaint reaches the right department</div>
+          
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="grievance-cat">
+              <option>-- Select Category --</option>
+              <option>Scheme / Subsidy Delay</option>
+              <option>Payment Not Received</option>
+              <option>Application Rejected Unfairly</option>
+              <option>Corruption / Misconduct</option>
+              <option>Document Verification Issue</option>
+              <option>Field Officer Complaint</option>
+              <option>Portal / Technical Issue</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Related Application (if any)</label>
+            <select class="form-select" id="grievance-app">
+              <option>-- Not Linked to Application --</option>
+              <option>APP-2024-001 · PM Kisan</option>
+              <option>APP-2024-002 · Soil Health Card</option>
+              <option>APP-2024-003 · Drip Irrigation Subsidy</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Grievance Title</label>
+            <input class="form-input" type="text" placeholder="Brief title of your complaint" id="grievance-title">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Detailed Description</label>
+            <textarea class="form-textarea" placeholder="Describe your issue in detail. Include dates, officer names, and any other relevant information..." id="grievance-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div style="display:flex;gap:8px;">
+              <div class="elig-tag" id="p-low" onclick="setPriority('low')" style="cursor:pointer;padding:6px 14px;">🟢 Low</div>
+              <div class="elig-tag" id="p-medium" onclick="setPriority('medium')" style="cursor:pointer;padding:6px 14px;background:rgba(255,143,0,0.15);border-color:rgba(255,143,0,0.4);color:var(--amber);">🟡 Medium</div>
+              <div class="elig-tag" id="p-high" onclick="setPriority('high')" style="cursor:pointer;padding:6px 14px;">🔴 High</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Attach Supporting Documents</label>
+            <div class="upload-zone" onclick="document.getElementById('griev-file').click()">
+              <div style="font-size:28px;">📎</div>
+              <p>Click to upload photos, screenshots, or documents<br><span style="font-size:11px;">PDF, JPG, PNG · Max 10MB each</span></p>
+              <input type="file" id="griev-file" style="display:none" multiple accept=".pdf,.jpg,.png">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitGrievance()">📢 Submit Grievance</button>
+        </div>
+
+        <!-- Existing Grievances -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Active Grievance</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:16px;">GRV-2024-0042</div>
+
+            <div class="grievance-stepper">
+              <div class="step-item done">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Filed</div>
+              </div>
+              <div class="step-item done">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Received</div>
+              </div>
+              <div class="step-item active">
+                <div class="step-circle">◉</div>
+                <div class="step-label">Assigned</div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle">4</div>
+                <div class="step-label">Action</div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle">5</div>
+                <div class="step-label">Resolved</div>
+              </div>
+            </div>
+
+            <div style="font-size:14px;font-weight:600;margin-top:8px;">PM Kisan 17th Installment — Not Received</div>
+            <div style="font-size:12px;color:var(--text3);margin:4px 0 12px;">Filed: 18 Mar 2026 · Priority: High</div>
+
+            <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;">
+              <div style="font-size:11px;color:var(--amber);font-weight:600;margin-bottom:6px;">CURRENT STATUS</div>
+              <div style="font-size:13px;color:var(--text2);">Assigned to: <strong style="color:var(--text)">Taluka Agricultural Officer, Nashik</strong></div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;">Expected resolution by: <strong style="color:var(--gold)">Apr 5, 2026</strong></div>
+            </div>
+
+            <div class="timeline" style="padding-left:28px;">
+              <div class="timeline-item">
+                <div class="timeline-dot done"></div>
+                <div class="timeline-title">Grievance Filed Online</div>
+                <div class="timeline-date">18 Mar 2026 · 10:34 AM</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot done"></div>
+                <div class="timeline-title">Acknowledged by District Office</div>
+                <div class="timeline-date">19 Mar 2026 · Automated</div>
+                <div class="timeline-note">Auto-ticket generated. Escalated to taluka level.</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot active"></div>
+                <div class="timeline-title">Under Investigation</div>
+                <div class="timeline-date">22 Mar 2026 · Officer: S.K. Deshmukh</div>
+                <div class="timeline-note">Bank account linkage mismatch detected. DBT team notified.</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot pending"></div>
+                <div class="timeline-title">Resolution Pending</div>
+                <div class="timeline-date">Est. Apr 5, 2026</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Past Grievances</div>
+            <table class="data-table">
+              <thead><tr><th>Grievance ID</th><th>Issue</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">GRV-2023-0018</td><td>Scheme delay</td><td><span class="tag tag-approved">Resolved</span></td></tr>
+                <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">GRV-2023-0005</td><td>Document error</td><td><span class="tag tag-approved">Resolved</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── REPORTS ─────────────────────────── -->
+  <div id="page-reports" class="page">
+    <div class="page-content">
+      <div class="section-title">My Reports</div>
+      <div class="section-sub">Real-time status overview of all your applications and benefits</div>
+
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="stat-card green"><div class="stat-icon">📋</div><div class="stat-val">5</div><div class="stat-label">Total Filed</div></div>
+        <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-val">2</div><div class="stat-label">Approved</div></div>
+        <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-val">3</div><div class="stat-label">Awaiting</div></div>
+        <div class="stat-card blue"><div class="stat-icon">💵</div><div class="stat-val">₹18.5K</div><div class="stat-label">Benefits Received</div></div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Application Status Breakdown</div>
+          <div id="bar-chart">
+            <div class="chart-bar">
+              <div class="chart-bar-label">PM Kisan</div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:100%;background:linear-gradient(90deg,var(--green),var(--green2));"></div></div>
+              <div class="chart-bar-val">Approved</div>
+            </div>
+            <div class="chart-bar">
+              <div class="chart-bar-label">Soil Health Card</div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:65%;background:linear-gradient(90deg,var(--amber),#ffca28);"></div></div>
+              <div class="chart-bar-val">65%</div>
+            </div>
+            <div class="chart-bar">
+              <div class="chart-bar-label">Drip Irrigation</div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:30%;background:linear-gradient(90deg,var(--blue),#90caf9);"></div></div>
+              <div class="chart-bar-val">30%</div>
+            </div>
+            <div class="chart-bar">
+              <div class="chart-bar-label">Fasal Bima</div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:100%;background:linear-gradient(90deg,var(--green),var(--green2));"></div></div>
+              <div class="chart-bar-val">Approved</div>
+            </div>
+            <div class="chart-bar">
+              <div class="chart-bar-label">KCC Loan</div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:15%;background:linear-gradient(90deg,#7e57c2,#9c8fff);"></div></div>
+              <div class="chart-bar-val">15%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Pending Admin Action — Alerts</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="alert alert-warning" style="margin-bottom:0;">
+              <span class="alert-icon">⚠️</span>
+              <div>
+                <div style="font-weight:600;font-size:13px;">Soil Health Card</div>
+                <div style="font-size:12px;margin-top:2px;">Submitted on 20 Mar 2026. Admin review pending for <strong>9 days</strong>. Expected SLA: 7 days. Escalation triggered.</div>
+              </div>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:0;">
+              <span class="alert-icon">ℹ️</span>
+              <div>
+                <div style="font-weight:600;font-size:13px;">Drip Irrigation Subsidy</div>
+                <div style="font-size:12px;margin-top:2px;">Document verification stage. Admin has viewed your application. Awaiting field inspection scheduling.</div>
+              </div>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:0;">
+              <span class="alert-icon">ℹ️</span>
+              <div>
+                <div style="font-weight:600;font-size:13px;">KCC Loan Application</div>
+                <div style="font-size:12px;margin-top:2px;">Submitted 15 Mar 2026. Under credit assessment at bank. No admin delay detected yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:15px;font-weight:700;">Full Application History</div>
+          <button class="btn btn-outline btn-sm">⬇ Download PDF</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Application ID</th>
+              <th>Scheme / Subsidy</th>
+              <th>Applied On</th>
+              <th>Amount</th>
+              <th>Admin Status</th>
+              <th>Your Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">APP-2024-001</td>
+              <td>PM Kisan Samman Nidhi</td>
+              <td>01 Jan 2024</td>
+              <td style="color:var(--gold);font-family:'DM Mono',monospace;">₹6,000</td>
+              <td><span class="tag tag-approved">Verified</span></td>
+              <td><span class="tag tag-approved">✅ Received</span></td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">APP-2024-002</td>
+              <td>Soil Health Card</td>
+              <td>20 Mar 2026</td>
+              <td style="color:var(--text3);">—</td>
+              <td><span class="tag tag-pending">Pending 9d</span></td>
+              <td><span class="tag tag-processing">⏳ Waiting</span></td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">APP-2024-003</td>
+              <td>Drip Irrigation Subsidy</td>
+              <td>15 Mar 2026</td>
+              <td style="color:var(--gold);font-family:'DM Mono',monospace;">₹18,000</td>
+              <td><span class="tag tag-processing">Field Visit</span></td>
+              <td><span class="tag tag-processing">📋 In Review</span></td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">APP-2024-004</td>
+              <td>PM Fasal Bima Yojana</td>
+              <td>10 Nov 2025</td>
+              <td style="color:var(--gold);font-family:'DM Mono',monospace;">₹12,500</td>
+              <td><span class="tag tag-approved">Verified</span></td>
+              <td><span class="tag tag-approved">✅ Insured</span></td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">APP-2024-005</td>
+              <td>Kisan Credit Card</td>
+              <td>15 Mar 2026</td>
+              <td style="color:var(--gold);font-family:'DM Mono',monospace;">₹1,50,000</td>
+              <td><span class="tag tag-pending">Bank Review</span></td>
+              <td><span class="tag tag-submitted">📩 Submitted</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── PROFILE ─────────────────────────── -->
+  <div id="page-profile" class="page">
+    <div class="page-content">
+      <div class="section-title">My Profile</div>
+      <div class="section-sub">Your registered information with the Agricultural Department</div>
+      <div class="grid-2">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+            <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--green-dim),var(--green));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;">👨‍🌾</div>
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;">Ramesh Shankar Patil</div>
+              <div style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;">KID-MH-2024-04821</div>
+              <span class="tag tag-approved" style="margin-top:6px;">✔ Verified Farmer</span>
+            </div>
+          </div>
+          <div style="display:grid;gap:10px;font-size:13px;">
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>📞</span><div><div style="color:var(--text3);font-size:11px;">Mobile</div><div style="font-weight:600;">+91 98765 43210</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>🏠</span><div><div style="color:var(--text3);font-size:11px;">Address</div><div style="font-weight:600;">Vill. Nandur, Tal. Niphad, Dist. Nashik - 422303</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>🔵</span><div><div style="color:var(--text3);font-size:11px;">Aadhaar</div><div style="font-weight:600;">XXXX XXXX 4821 · <span class="tag tag-approved" style="font-size:10px;">Linked</span></div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>🏦</span><div><div style="color:var(--text3);font-size:11px;">Bank Account (DBT)</div><div style="font-weight:600;">SBI ••••4821 · IFSC: SBIN0004321</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Land & Crop Details</div>
+          <div style="display:grid;gap:10px;font-size:13px;">
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>🗺️</span><div><div style="color:var(--text3);font-size:11px;">Survey Numbers</div><div style="font-weight:600;">Gat No. 42, 43 · Nandur Village</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>📐</span><div><div style="color:var(--text3);font-size:11px;">Total Land Area</div><div style="font-weight:600;">3.5 Acres (1.42 Hectares)</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>🌾</span><div><div style="color:var(--text3);font-size:11px;">Primary Crops</div><div style="font-weight:600;">Wheat (Rabi), Onion (Kharif)</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>👥</span><div><div style="color:var(--text3);font-size:11px;">Category</div><div style="font-weight:600;">Small Farmer · General Category</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg3);border-radius:8px;">
+              <span>💧</span><div><div style="color:var(--text3);font-size:11px;">Irrigation Source</div><div style="font-weight:600;">Borewell + Canal (Partial)</div></div>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:16px;">✏️ Request Profile Update</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── DOCUMENTS ─────────────────────────── -->
+  <div id="page-documents" class="page">
+    <div class="page-content">
+      <div class="section-title">My Documents</div>
+      <div class="section-sub">Manage your uploaded documents for scheme applications</div>
+
+      <div class="grid-3" style="margin-bottom:24px;">
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;border-color:var(--green);">
+          <span style="font-size:28px;">🆔</span>
+          <div><div style="font-size:13px;font-weight:600;">Aadhaar Card</div><div style="font-size:11px;color:var(--green2);">✓ Uploaded & Verified</div></div>
+        </div>
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;border-color:var(--green);">
+          <span style="font-size:28px;">🏦</span>
+          <div><div style="font-size:13px;font-weight:600;">Bank Passbook</div><div style="font-size:11px;color:var(--green2);">✓ Uploaded & Verified</div></div>
+        </div>
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;border-color:var(--green);">
+          <span style="font-size:28px;">🗺️</span>
+          <div><div style="font-size:13px;font-weight:600;">7/12 Extract (Satbara)</div><div style="font-size:11px;color:var(--green2);">✓ Uploaded & Verified</div></div>
+        </div>
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;border-color:var(--amber);">
+          <span style="font-size:28px;">📋</span>
+          <div><div style="font-size:13px;font-weight:600;">8-A Land Record</div><div style="font-size:11px;color:var(--amber);">⚠ Pending Upload</div></div>
+        </div>
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;">
+          <span style="font-size:28px;">🏪</span>
+          <div><div style="font-size:13px;font-weight:600;">Ration Card</div><div style="font-size:11px;color:var(--text3);">Not uploaded</div></div>
+        </div>
+        <div class="card-sm" style="display:flex;gap:12px;align-items:center;border:2px dashed var(--border);cursor:pointer;" onclick="document.getElementById('doc-upload').click()">
+          <span style="font-size:28px;">➕</span>
+          <div><div style="font-size:13px;font-weight:600;">Upload Document</div><div style="font-size:11px;color:var(--text3);">Add new document</div></div>
+          <input type="file" id="doc-upload" style="display:none">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ─────────────────────────── NOTIFICATION PANEL ─────────────────────────── -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-header">
+    <span class="notif-title-text">🔔 Notifications</span>
+    <span class="notif-clear" onclick="clearNotifs()">Mark all read</span>
+  </div>
+  <div class="notif-item unread" onclick="navigate('applications', null);toggleNotif()">
+    <span class="notif-item-icon">⚠️</span>
+    <div class="notif-item-body">
+      <div class="notif-item-title">Document Required — Soil Health Card</div>
+      <div class="notif-item-desc">Upload 8-A land record to continue processing</div>
+      <div class="notif-item-time">2 hours ago</div>
+    </div>
+  </div>
+  <div class="notif-item unread" onclick="navigate('grievance', null);toggleNotif()">
+    <span class="notif-item-icon">📢</span>
+    <div class="notif-item-body">
+      <div class="notif-item-title">Grievance Update — GRV-2024-0042</div>
+      <div class="notif-item-desc">Assigned to Taluka Officer S.K. Deshmukh</div>
+      <div class="notif-item-time">Yesterday</div>
+    </div>
+  </div>
+  <div class="notif-item unread" onclick="navigate('reports', null);toggleNotif()">
+    <span class="notif-item-icon">🕒</span>
+    <div class="notif-item-body">
+      <div class="notif-item-title">SLA Breach — Soil Health Card</div>
+      <div class="notif-item-desc">Admin has not responded in 9 days. Auto-escalated.</div>
+      <div class="notif-item-time">2 days ago</div>
+    </div>
+  </div>
+  <div class="notif-item" onclick="toggleNotif()">
+    <span class="notif-item-icon">✅</span>
+    <div class="notif-item-body">
+      <div class="notif-item-title">PM Kisan Installment Credited</div>
+      <div class="notif-item-desc">₹6,000 credited to SBI account ending ••4821</div>
+      <div class="notif-item-time">25 Mar 2026</div>
+    </div>
+  </div>
+  <div class="notif-item" onclick="toggleNotif()">
+    <span class="notif-item-icon">📣</span>
+    <div class="notif-item-body">
+      <div class="notif-item-title">New Scheme: PM Kisan 18th Installment</div>
+      <div class="notif-item-desc">Enrollment starts April 1. Verify your Aadhaar link.</div>
+      <div class="notif-item-time">28 Mar 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────── APPLY MODAL ─────────────────────────── -->
+<div class="modal-overlay" id="apply-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-scheme-title">Apply for Scheme</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;color:var(--text2);">Benefit Amount</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--gold);" id="modal-amount">₹0</div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">Review your pre-filled details below. AI has verified your eligibility based on your land records.</div>
+      <div class="form-group">
+        <label class="form-label">Applicant Name</label>
+        <input class="form-input" value="Ramesh Shankar Patil" readonly style="opacity:0.7;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Farmer ID</label>
+        <input class="form-input" value="KID-MH-2024-04821" readonly style="opacity:0.7;font-family:'DM Mono',monospace;font-size:12px;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Land Survey Number</label>
+        <input class="form-input" value="Gat No. 42, 43 · Nandur, Niphad, Nashik" readonly style="opacity:0.7;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank Account (DBT)</label>
+        <input class="form-input" value="SBI ••••4821 · IFSC: SBIN0004321" readonly style="opacity:0.7;font-family:'DM Mono',monospace;font-size:12px;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Purpose / Additional Notes (optional)</label>
+        <textarea class="form-textarea" placeholder="Any additional information for the officer..." style="min-height:70px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Upload Additional Documents (if required)</label>
+        <div class="upload-zone" style="padding:16px;" onclick="document.getElementById('apply-doc').click()">
+          <div style="font-size:22px;">📎</div>
+          <p>Click to attach additional documents</p>
+          <input type="file" id="apply-doc" style="display:none" multiple>
+        </div>
+      </div>
+      <div class="alert alert-success" style="margin-bottom:0;">
+        <span class="alert-icon">✅</span>
+        <span>Your profile has been <strong>AI-verified</strong> as eligible for this scheme. Submission will be auto-routed to the concerned officer.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmApply()">🚀 Submit Application</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div class="modal-body" style="padding:36px 28px;">
+      <div style="font-size:56px;margin-bottom:16px;">🎉</div>
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px;color:var(--green2);">Application Submitted!</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">Your application has been successfully submitted and auto-routed to the concerned officer. You can track its status in <strong>My Applications</strong>.</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:20px;font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);" id="new-app-id">APP-2024-006</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">You will receive updates via SMS and portal notifications.</div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="closeSuccessModal()">Track Application →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── LIVE CLOCK ───
+function updateClock() {
+  const t = new Date();
+  document.getElementById('live-time').textContent = t.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ─── NAVIGATION ───
+const pageTitles = {
+  dashboard: 'Dashboard', schemes: 'Schemes', subsidies: 'Subsidies',
+  insurance: 'Insurance', applications: 'My Applications', grievance: 'Grievances',
+  reports: 'Reports & Tracking', profile: 'My Profile', documents: 'My Documents'
+};
+
+function navigate(page, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[page] || page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  if (page === 'applications') renderApplications('all');
+  if (page === 'schemes') renderSchemes();
+}
+
+// ─── NOTIFICATIONS ───
+function toggleNotif() {
+  const p = document.getElementById('notif-panel');
+  p.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notif-panel');
+  const btn = document.querySelector('.notif-btn');
+  if (!panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('open');
+});
+function clearNotifs() {
+  document.querySelectorAll('.notif-item.unread').forEach(i => i.classList.remove('unread'));
+  document.querySelector('.notif-dot').style.display = 'none';
+}
+
+// ─── MODAL ───
+let currentScheme = '';
+function openApplyModal(name, amount) {
+  currentScheme = name;
+  document.getElementById('modal-scheme-title').textContent = 'Apply: ' + name;
+  document.getElementById('modal-amount').textContent = amount;
+  document.getElementById('apply-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('apply-modal').classList.remove('open');
+}
+function confirmApply() {
+  closeModal();
+  const appNum = 'APP-2026-' + String(Math.floor(Math.random() * 900) + 100);
+  document.getElementById('new-app-id').textContent = appNum;
+  document.getElementById('success-modal').classList.add('open');
+}
+function closeSuccessModal() {
+  document.getElementById('success-modal').classList.remove('open');
+  navigate('applications', null);
+}
+
+// ─── APPLICATIONS DATA ───
+const applications = [
+  { id: 'APP-2024-001', name: 'PM Kisan Samman Nidhi', type: 'Scheme', date: '01 Jan 2024', amount: '₹6,000', status: 'approved', adminStatus: 'Verified', note: 'Amount credited to bank.' },
+  { id: 'APP-2024-002', name: 'Soil Health Card', type: 'Scheme', date: '20 Mar 2026', amount: '—', status: 'pending', adminStatus: 'Pending 9d ⚠', note: 'Upload 8-A land record. SLA breached.' },
+  { id: 'APP-2024-003', name: 'Drip Irrigation Subsidy', type: 'Subsidy', date: '15 Mar 2026', amount: '₹18,000', status: 'processing', adminStatus: 'Field Visit Pending', note: 'Awaiting field officer inspection.' },
+  { id: 'APP-2024-004', name: 'PM Fasal Bima Yojana', type: 'Insurance', date: '10 Nov 2025', amount: '₹12,500', status: 'approved', adminStatus: 'Verified', note: 'Insurance active until Oct 2026.' },
+  { id: 'APP-2024-005', name: 'Kisan Credit Card', type: 'Scheme', date: '15 Mar 2026', amount: '₹1,50,000', status: 'pending', adminStatus: 'Bank Review', note: 'Credit assessment in progress.' },
+];
+
+function renderApplications(filter) {
+  const list = document.getElementById('app-list');
+  if (!list) return;
+  const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter || (filter === 'processing' && a.status === 'processing'));
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No applications in this category.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(a => {
+    const tagClass = a.status === 'approved' ? 'tag-approved' : a.status === 'pending' ? 'tag-pending' : 'tag-processing';
+    const icon = a.status === 'approved' ? '✅' : a.status === 'pending' ? '⏳' : '🔄';
+    return `
+    <div class="card" style="transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:24px;">${a.type === 'Scheme' ? '📋' : a.type === 'Subsidy' ? '💰' : '🛡️'}</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);">${a.name}</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">${a.id} · ${a.type} · Applied: ${a.date}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-family:'DM Mono',monospace;color:var(--gold);font-size:14px;font-weight:600;">${a.amount}</div>
+          <span class="tag ${tagClass}">${icon} ${a.status.charAt(0).toUpperCase() + a.status.slice(1)}</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;background:var(--bg3);border-radius:8px;padding:10px 14px;display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Admin Status</div>
+          <div style="font-size:13px;color:var(--text2);">${a.adminStatus}</div>
+        </div>
+        <div style="flex:2;min-width:200px;">
+          <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Note / Update</div>
+          <div style="font-size:13px;color:var(--text2);">${a.note}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterApps(filter, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  renderApplications(filter);
+}
+
+// ─── SCHEMES DATA ───
+const schemesData = [
+  { name: 'PM Kisan Samman Nidhi', dept: 'Ministry of Agriculture', amount: '₹6,000/yr', deadline: 'Apr 15, 2026', desc: 'Annual income support of ₹6000 in 3 installments to small and marginal farmer families.', tags: ['≤2 Ha', 'Any Crop'], cat: 'crop' },
+  { name: 'PM Fasal Bima Yojana', dept: 'Agriculture Ministry', amount: '₹25,000', deadline: 'Apr 15, 2026', desc: 'Comprehensive crop insurance covering sowing to post-harvest losses.', tags: ['Rabi/Kharif', 'Any Crop'], cat: 'crop' },
+  { name: 'PMKSY Micro Irrigation', dept: 'Jal Shakti Ministry', amount: '₹15,000', deadline: 'May 1, 2026', desc: 'Drip and sprinkler irrigation systems subsidy for efficient water use.', tags: ['Any Land', 'Water Stressed'], cat: 'irrigation' },
+  { name: 'Soil Health Card', dept: 'Dept. Agriculture', amount: 'Free', deadline: 'Open', desc: 'Free soil testing and health card for informed fertilizer use decisions.', tags: ['All Farmers'], cat: 'soil' },
+  { name: 'Kisan Credit Card', dept: 'NABARD', amount: 'Up to ₹3L', deadline: 'Open', desc: 'Revolving credit for crop production, maintenance, and post-harvest expenses.', tags: ['Registered Farmers'], cat: 'training' },
+  { name: 'Sub-Mission on Agricultural Mechanization', dept: 'SMAM', amount: '₹60,000', deadline: 'Jun 30, 2026', desc: '40-50% subsidy on farm machinery including tractors, threshers, and power tillers.', tags: ['≤5 Acres'], cat: 'tech' },
+  { name: 'National Mission Sustainable Agriculture', dept: 'NMSA', amount: '₹12,000', deadline: 'May 31, 2026', desc: 'Promoting integrated farming, soil health management, and rainfed area development.', tags: ['Rainfed Farmers'], cat: 'soil' },
+  { name: 'Pradhan Mantri Krishi Sinchai', dept: 'PMKSY', amount: '₹18,000/Ha', deadline: 'Open', desc: 'Water efficiency through drip/sprinkler systems. Har Khet Ko Pani mission.', tags: ['Per Hectare'], cat: 'irrigation' },
+];
+
+function renderSchemes(filtered) {
+  const list = document.getElementById('scheme-list');
+  if (!list) return;
+  const data = filtered || schemesData;
+  list.innerHTML = data.map(s => `
+    <div class="scheme-card" onclick="openApplyModal('${s.name}', '${s.amount}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div class="scheme-name">${s.name}</div>
+          <div class="scheme-dept">${s.dept}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="scheme-amount">${s.amount}</span>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyModal('${s.name}','${s.amount}')">Apply</button>
+        </div>
+      </div>
+      <div class="scheme-desc" style="margin-top:8px;">${s.desc}</div>
+      <div class="scheme-footer">
+        <span class="scheme-deadline">⏰ Deadline: ${s.deadline}</span>
+        <div class="scheme-eligibility">${s.tags.map(t => `<span class="elig-tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterByCategory(el, cat) {
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const filtered = cat === 'all' ? schemesData : schemesData.filter(s => s.cat === cat);
+  renderSchemes(filtered);
+}
+
+function filterSchemes() {
+  const q = document.getElementById('scheme-search').value.toLowerCase();
+  const filtered = schemesData.filter(s => s.name.toLowerCase().includes(q) || s.dept.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q));
+  renderSchemes(filtered);
+}
+
+// ─── GRIEVANCE ───
+let selectedPriority = 'medium';
+function setPriority(p) {
+  selectedPriority = p;
+  document.querySelectorAll('[id^="p-"]').forEach(el => {
+    el.style.background = ''; el.style.borderColor = ''; el.style.color = '';
+  });
+  const map = { low: 'rgba(76,175,80', medium: 'rgba(255,143,0', high: 'rgba(239,83,80' };
+  const el = document.getElementById('p-' + p);
+  if (el) { el.style.background = `${map[p]},0.2)`; el.style.borderColor = `${map[p]},0.5)`; }
+}
+
+function submitGrievance() {
+  const title = document.getElementById('grievance-title').value;
+  const cat = document.getElementById('grievance-cat').value;
+  if (!title || cat === '-- Select Category --') {
+    alert('Please fill in the category and title before submitting.'); return;
+  }
+  document.getElementById('grievance-title').value = '';
+  document.getElementById('grievance-desc').value = '';
+  alert('✅ Grievance submitted successfully!\n\nID: GRV-2026-' + String(Math.floor(Math.random()*900)+100) + '\nYou will receive SMS updates on your registered mobile number.');
+}
+
+// ─── INIT ───
+renderSchemes();
+renderApplications('all');
+</script>
+</body>
+</html>
+

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Decision Panel — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+<style>
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+/* ── Score card row ── */
+.score-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.score-card {
+  background:#fff; border:1.5px solid var(--border); border-radius:16px;
+  padding:20px; text-align:center; transition:all 0.2s;
+}
+.score-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); transform:translateY(-2px); }
+.sc-num  { font-size:36px; font-weight:900; line-height:1; }
+.sc-label{ font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-top:6px; }
+.sc-bar  { height:6px; background:#E0E0E0; border-radius:3px; margin-top:10px; overflow:hidden; }
+.sc-fill { height:100%; border-radius:3px; transition:width 0.8s ease; }
+
+/* ── Big decision banner ── */
+.decision-banner {
+  border-radius:20px; padding:28px 32px; color:#fff;
+  margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; gap:24px;
+  position:relative; overflow:hidden;
+}
+.decision-banner::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:200px; height:200px; border-radius:50%;
+  background:rgba(255,255,255,0.08);
+}
+.decision-banner.approved { background:linear-gradient(135deg,#1B5E20,#2E7D32,#43A047); }
+.decision-banner.review   { background:linear-gradient(135deg,#E65100,#F57C00,#FFA726); }
+.decision-banner.flagged  { background:linear-gradient(135deg,#880E4F,#C62828,#E53935); }
+.decision-banner.pending  { background:linear-gradient(135deg,#0D47A1,#1565C0,#1E88E5); }
+.db-icon  { font-size:56px; flex-shrink:0; }
+.db-title { font-size:26px; font-weight:900; margin-bottom:6px; }
+.db-sub   { font-size:14px; opacity:0.85; max-width:500px; }
+
+/* ── Stats pill row ── */
+.stat-pills { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
+.stat-pill  {
+  background:rgba(255,255,255,0.18);
+  padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;
+}
+
+/* ── Factors grid ── */
+.factors-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.factor-card {
+  background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:20px;
+}
+.factor-card.positive { border-color:rgba(46,125,50,0.3); }
+.factor-card.negative { border-color:rgba(198,40,40,0.3); }
+.factor-title { font-size:13px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.factor-item  { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #F5F5F5; font-size:13px; }
+.factor-item:last-child { border-bottom:none; }
+.fi-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+.fi-text  { color:var(--text2); line-height:1.4; }
+
+/* ── Field comparison table ── */
+.cmp-table { width:100%; border-collapse:collapse; font-size:13px; }
+.cmp-table th { background:#F8F9FA; padding:10px 14px; text-align:left; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text3); border-bottom:2px solid var(--border); }
+.cmp-table td { padding:10px 14px; border-bottom:1px solid #F0F0F0; vertical-align:top; }
+.cmp-table tr:hover td { background:#FAFAFA; }
+.cmp-match-cell   { color:#2E7D32; font-weight:600; }
+.cmp-mis-cell     { color:#C62828; font-weight:600; background:#FFF5F5; }
+.score-pill { display:inline-block; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+.sp-high { background:#E8F5E9; color:#2E7D32; }
+.sp-mid  { background:#FFF3E0; color:#E65100; }
+.sp-low  { background:#FFEBEE; color:#C62828; }
+.sp-na   { background:#F5F5F5; color:#9CA3AF; }
+
+/* ── Action buttons ── */
+.action-card { background:#fff; border:1.5px solid var(--border); border-radius:16px; padding:24px; }
+.action-title { font-size:14px; font-weight:800; margin-bottom:16px; }
+.action-row   { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.btn-approve { background:linear-gradient(135deg,#2E7D32,#388E3C); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 12px rgba(46,125,50,0.3); }
+.btn-approve:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(46,125,50,0.4); }
+.btn-reject  { background:linear-gradient(135deg,#C62828,#E53935); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 12px rgba(198,40,40,0.3); }
+.btn-reject:hover  { transform:translateY(-1px); box-shadow:0 6px 18px rgba(198,40,40,0.4); }
+.btn-flag    { background:#FFF3E0; color:#E65100; border:1.5px solid #FFB74D; border-radius:10px; padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer; }
+.btn-flag:hover    { background:#FFE0B2; }
+.remarks-box { flex:1; min-width:200px; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; }
+.remarks-box:focus { outline:none; border-color:var(--primary); }
+
+/* Dup alert */
+.dup-alert { background:#FCE4EC; border:1px solid #F48FB1; border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; gap:12px; align-items:center; font-size:13px; color:#880E4F; font-weight:600; }
+
+/* Breadcrumb */
+.breadcrumb { font-size:12px; color:var(--text3); margin-bottom:16px; }
+.breadcrumb a { color:var(--primary); text-decoration:none; }
+.breadcrumb a:hover { text-decoration:underline; }
+
+/* Loading */
+.loading-wrap { text-align:center; padding:80px 24px; }
+.spinner { width:44px; height:44px; border:4px solid #E0E0E0; border-top-color:#2E7D32; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+    <div class="page-wrap" id="page-wrap">
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Loading AI Decision Panel...</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">Running analysis...</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('ai-decisions');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+
+// Get user_id from URL param or use first farmer
+const params = new URLSearchParams(window.location.search);
+const userId = parseInt(params.get('user_id')) || 1;
+
+// ── Load and render ─────────────────────────────────────────────
+async function loadDecision() {
+  try {
+    // Run analysis
+    const anaRes = await fetch(`${API}/ocr/analyze/${userId}`, { method: 'POST' });
+    let data;
+    if (anaRes.ok) {
+      data = await anaRes.json();
+    } else {
+      // Try loading existing decision
+      const decRes = await fetch(`${API}/ocr/decision/${userId}`);
+      if (!decRes.ok) throw new Error('No decision found');
+      const dec = await decRes.json();
+      data = {
+        overall_score: dec.overall_score,
+        decision: dec.decision,
+        fraud_risk: dec.fraud_risk,
+        confidence: dec.confidence,
+        approval_probability: dec.approval_probability,
+        positive_factors: dec.positive_factors,
+        risk_factors: dec.risk_factors,
+        duplicate_aadhaar: dec.duplicate_aadhaar,
+        comparisons: [],
+        mismatches: dec.mismatch_fields,
+      };
+    }
+
+    // Get decision ID
+    let decId = null;
+    try {
+      const dRes = await fetch(`${API}/ocr/decision/${userId}`);
+      if (dRes.ok) { const d = await dRes.json(); decId = d.id; }
+    } catch {}
+
+    // Get farmer info
+    let farmer = { full_name: 'Farmer', farmer_id: 'KID-MH-XXXX', district: '—' };
+    try {
+      const fRes = await fetch(`${API}/farmers/${userId}`);
+      if (fRes.ok) farmer = await fRes.json();
+    } catch {}
+
+    renderPanel(data, farmer, decId);
+  } catch(err) {
+    renderError(err.message);
+  }
+}
+
+function scoreColor(s) { return s >= 90 ? '#2E7D32' : s >= 70 ? '#E65100' : '#C62828'; }
+function scoreBarColor(s) { return s >= 90 ? '#4CAF50' : s >= 70 ? '#FF9800' : '#F44336'; }
+function scorePillClass(s) { return s === null ? 'sp-na' : s >= 80 ? 'sp-high' : s >= 60 ? 'sp-mid' : 'sp-low'; }
+
+function renderPanel(data, farmer, decId) {
+  const score     = data.overall_score ?? 0;
+  const fraud     = data.fraud_risk ?? 0;
+  const conf      = data.confidence ?? 0;
+  const appP      = data.approval_probability ?? 0;
+  const decision  = data.decision || 'manual_review';
+  const positives = data.positive_factors || [];
+  const risks     = data.risk_factors || [];
+  const comps     = data.comparisons || [];
+  const isDup     = data.duplicate_aadhaar;
+
+  const bannerCls  = { auto_approved:'approved', manual_review:'review', flagged:'flagged' }[decision] || 'pending';
+  const bannerIcon = { auto_approved:'✅', manual_review:'⚠️', flagged:'🚫' }[decision] || '⏳';
+  const bannerTitle = { auto_approved:'Auto Approved — High Confidence', manual_review:'Manual Review Required', flagged:'Flagged — Possible Fraud' }[decision] || 'Analysis Pending';
+  const bannerSub  = {
+    auto_approved: `Match score ${score.toFixed(1)}% exceeds 90% threshold. AI recommends automatic approval. Human verification optional.`,
+    manual_review: `Match score ${score.toFixed(1)}% is between 70–90%. Manual review is required before approval.`,
+    flagged:       `Match score ${score.toFixed(1)}% is below 70% or fraud indicators detected. Application must be thoroughly reviewed.`,
+  }[decision] || 'Analysis in progress.';
+
+  const compRows = comps.map(c => {
+    const cls = c.ocr === '—' && c.form === '—' ? '' : (c.match ? 'cmp-match-cell' : 'cmp-mis-cell');
+    const sc  = c.score;
+    const spCls = scorePillClass(sc);
+    return `<tr>
+      <td><strong>${c.field}</strong></td>
+      <td class="${cls}">${c.ocr || '—'}</td>
+      <td class="${cls}">${c.form || '—'}</td>
+      <td><span class="score-pill ${spCls}">${sc.toFixed(0)}%</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">No comparison data — upload documents first</td></tr>';
+
+  document.getElementById('page-wrap').innerHTML = `
+    <div class="breadcrumb">
+      <a href="document-verification.html">← Document Verification</a> / AI Decision Panel
+    </div>
+
+    <!-- Farmer info header -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#1B5E20,#2E7D32);display:flex;align-items:center;justify-content:center;font-size:24px;">🌾</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;">${farmer.full_name}</div>
+        <div style="font-size:13px;color:var(--text3);">${farmer.farmer_id || '—'} · ${farmer.district || '—'} · User #${userId}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="loadDecision()">↻ Re-run Analysis</button>
+        <a href="document-verification.html" class="btn btn-outline btn-sm" style="text-decoration:none;">← Back to List</a>
+      </div>
+    </div>
+
+    <!-- Duplicate alert -->
+    ${isDup ? '<div class="dup-alert">⚠️ DUPLICATE AADHAAR DETECTED — Another farmer registered with the same Aadhaar number. This application must be reviewed for fraud.</div>' : ''}
+
+    <!-- Decision banner -->
+    <div class="decision-banner ${bannerCls}">
+      <div class="db-icon">${bannerIcon}</div>
+      <div>
+        <div class="db-title">${bannerTitle}</div>
+        <div class="db-sub">${bannerSub}</div>
+        <div class="stat-pills">
+          <span class="stat-pill">Score: ${score.toFixed(1)}%</span>
+          <span class="stat-pill">Fraud Risk: ${fraud.toFixed(1)}%</span>
+          <span class="stat-pill">Confidence: ${conf.toFixed(1)}%</span>
+          <span class="stat-pill">Approval: ${appP.toFixed(1)}%</span>
+          ${isDup ? '<span class="stat-pill">⚠ Duplicate Aadhaar</span>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- Score gauges -->
+    <div class="score-row">
+      <div class="score-card">
+        <div class="sc-num" style="color:${scoreColor(score)}">${score.toFixed(1)}%</div>
+        <div class="sc-label">Overall Match</div>
+        <div class="sc-bar"><div class="sc-fill" style="width:${score}%;background:${scoreBarColor(score)};"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="sc-num" style="color:#C62828">${fraud.toFixed(1)}%</div>
+        <div class="sc-label">Fraud Risk</div>
+        <div class="sc-bar"><div class="sc-fill" style="width:${fraud}%;background:#F44336;"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="sc-num" style="color:#1565C0">${conf.toFixed(1)}%</div>
+        <div class="sc-label">AI Confidence</div>
+        <div class="sc-bar"><div class="sc-fill" style="width:${conf}%;background:#1976D2;"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="sc-num" style="color:#2E7D32">${appP.toFixed(1)}%</div>
+        <div class="sc-label">Approval Probability</div>
+        <div class="sc-bar"><div class="sc-fill" style="width:${appP}%;background:#4CAF50;"></div></div>
+      </div>
+    </div>
+
+    <!-- Factors -->
+    <div class="factors-grid">
+      <div class="factor-card positive">
+        <div class="factor-title" style="color:#2E7D32;">✅ Positive Factors (${positives.length})</div>
+        ${positives.length ? positives.map(p => `<div class="factor-item"><span class="fi-icon">✓</span><span class="fi-text">${p}</span></div>`).join('') : '<div class="factor-item"><span class="fi-icon">—</span><span class="fi-text" style="color:var(--text3);">No positive factors detected</span></div>'}
+      </div>
+      <div class="factor-card negative">
+        <div class="factor-title" style="color:#C62828;">⚠️ Risk Factors (${risks.length})</div>
+        ${risks.length ? risks.map(r => `<div class="factor-item"><span class="fi-icon">✗</span><span class="fi-text">${r}</span></div>`).join('') : '<div class="factor-item"><span class="fi-icon">—</span><span class="fi-text" style="color:var(--text3);">No risk factors detected</span></div>'}
+      </div>
+    </div>
+
+    <!-- Field comparison table -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:800;margin-bottom:14px;">Field-by-Field Comparison</div>
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <thead><tr>
+            <th>Field</th>
+            <th>🤖 OCR Extracted</th>
+            <th>📋 Form Data</th>
+            <th>Match Score</th>
+          </tr></thead>
+          <tbody>${compRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Action card -->
+    <div class="action-card">
+      <div class="action-title">Officer Decision</div>
+      <div class="action-row">
+        <input class="remarks-box" id="remarks" placeholder="Add remarks before deciding...">
+        <button class="btn-approve" onclick="decide('approved', ${decId})">✓ Approve</button>
+        <button class="btn-flag"    onclick="decide('flagged', ${decId})">⚠ Flag</button>
+        <button class="btn-reject"  onclick="decide('rejected', ${decId})">✗ Reject</button>
+      </div>
+    </div>`;
+}
+
+async function decide(decision, decId) {
+  if (!decId) { alert('No decision record found. Please run analysis first.'); return; }
+  const remarks = document.getElementById('remarks')?.value || '';
+  const label   = { approved:'Approved ✓', rejected:'Rejected ✗', flagged:'Flagged ⚠' }[decision] || decision;
+  try {
+    const res = await fetch(`${API}/ocr/decision/${decId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_decision: decision, admin_remarks: remarks, decided_by: 'Admin' }),
+    });
+    if (!res.ok) throw new Error('Save failed');
+    alert(`✅ Decision recorded: ${label}`);
+    window.location.href = 'document-verification.html';
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function renderError(msg) {
+  document.getElementById('page-wrap').innerHTML = `
+    <div style="text-align:center;padding:80px 24px;">
+      <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+      <div style="font-size:16px;font-weight:700;">Failed to load AI Decision</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:6px;">${msg}</div>
+      <button class="btn btn-primary" style="margin-top:20px;" onclick="loadDecision()">Retry</button>
+    </div>`;
+}
+
+loadDecision();
+</script>
+</body>
+</html>

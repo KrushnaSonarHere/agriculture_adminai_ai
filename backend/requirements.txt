@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
+python-dotenv
+python-multipart
+Pillow
+rapidfuzz
+paddlepaddle
+paddleocr
+pdf2image

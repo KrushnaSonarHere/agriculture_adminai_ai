@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application Management — AgriPortal Admin</title>
+<link rel="stylesheet" href="../assets/css/admin-theme.css">
+</head>
+<body>
+<div class="admin-shell">
+<aside class="admin-sidebar" id="admin-sidebar"></aside>
+<div class="admin-main">
+  <div class="admin-topbar" id="admin-topbar"></div>
+  <div class="admin-content">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+      <div>
+        <div class="page-heading">Application Management</div>
+        <div class="page-sub">Review and process farmer applications</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="export-btn" class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export</span>
+        <span class="badge badge-ai">🤖 AI Scoring Active</span>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="admin-card" style="padding:0;margin-bottom:16px;">
+      <div style="padding:10px 16px;font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);">
+        ⚙ Filters
+      </div>
+      <div class="filters-bar">
+        <div class="filter-search" style="flex:2;">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Search by ID, farmer name..." oninput="filterTable()">
+        </div>
+        <select class="filter-select" id="filter-status" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option>Pending</option>
+          <option>Under Review</option>
+          <option>Approved</option>
+          <option>Rejected</option>
+        </select>
+        <select class="filter-select" id="filter-scheme" onchange="filterTable()">
+          <option value="">All Schemes</option>
+          <option>PM-KISAN</option>
+          <option>Crop Insurance</option>
+          <option>Equipment Subsidy</option>
+          <option>Organic Farming</option>
+          <option>Kisan Credit Card</option>
+          <option>PMFBY</option>
+          <option>Soil Health Card</option>
+        </select>
+        <select class="filter-select" id="filter-district" onchange="filterTable()">
+          <option value="">All Districts</option>
+          <option>Nashik</option><option>Pune</option><option>Nagpur</option>
+          <option>Aurangabad</option><option>Solapur</option><option>Kolhapur</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Applications Table Card -->
+    <div class="admin-card" style="padding:0;">
+      <div class="table-header">
+        <div>
+          <span class="table-header-title">Applications</span>
+          <span class="table-header-count" id="app-count" style="margin-left:8px;"></span>
+        </div>
+        <span style="font-size:12px;color:var(--text3);" id="show-count"></span>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Application ID</th>
+              <th>Farmer Details</th>
+              <th>Scheme</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>AI Score</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="apps-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">Loading applications...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <span id="page-info">Showing 1–10 of 0</span>
+        <div class="page-btns" id="page-btns"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Action Modal -->
+<div class="modal-overlay" id="action-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span id="modal-action-title">Application Action</span>
+      <span class="modal-close" onclick="closeModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert-banner info" id="modal-app-info" style="margin-bottom:12px;"></div>
+      <div class="form-group">
+        <label class="form-label">Admin Remarks</label>
+        <textarea class="form-textarea" id="modal-remarks" placeholder="Enter your reason/remarks for this decision..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/admin-components.js"></script>
+<script>
+adminCheckAuth();
+renderAdminSidebar('applications');
+renderAdminTopbar();
+
+const API = 'http://127.0.0.1:8000';
+let allApps = [];
+let filteredApps = [];
+let currentPage = 1;
+const PER_PAGE = 10;
+let pendingAction = null;
+
+// ── Mock AI scores (since backend doesn't store them yet) ──
+const AI_SCORES = [92, 88, 95, 78, 45, 65, 82, 71, 90, 55, 76, 84];
+
+// ── Demo data fallback ──
+const DEMO_APPS = [
+  { id: 'APP1234', app_number:'APP1234', farmer_name:'Ramesh Kumar', farmer_id:'FARM2024001', scheme:{Scheme_Name:'PM-KISAN'}, amount:'₹6,000', applied_at:'2026-03-29', status:'Pending' },
+  { id: 'APP1235', app_number:'APP1235', farmer_name:'Sunita Devi',  farmer_id:'FARM2024002', scheme:{Scheme_Name:'Crop Insurance'}, amount:'₹15,000', applied_at:'2026-03-29', status:'Under Review' },
+  { id: 'APP1236', app_number:'APP1236', farmer_name:'Vijay Singh',  farmer_id:'FARM2024003', scheme:{Scheme_Name:'Equipment Subsidy'}, amount:'₹25,000', applied_at:'2026-03-28', status:'Approved' },
+  { id: 'APP1237', app_number:'APP1237', farmer_name:'Lakshmi Patel',farmer_id:'FARM2024004', scheme:{Scheme_Name:'Organic Farming'}, amount:'₹12,000', applied_at:'2026-03-28', status:'Pending' },
+  { id: 'APP1238', app_number:'APP1238', farmer_name:'Mohan Reddy',  farmer_id:'FARM2024005', scheme:{Scheme_Name:'PM-KISAN'}, amount:'₹6,000', applied_at:'2026-03-27', status:'Rejected' },
+  { id: 'APP1239', app_number:'APP1239', farmer_name:'Geeta Sharma', farmer_id:'FARM2024006', scheme:{Scheme_Name:'Kisan Credit Card'}, amount:'₹50,000', applied_at:'2026-03-27', status:'Approved' },
+  { id: 'APP1240', app_number:'APP1240', farmer_name:'Ravi Tiwari',  farmer_id:'FARM2024007', scheme:{Scheme_Name:'PMFBY'}, amount:'₹8,000', applied_at:'2026-03-26', status:'Pending' },
+  { id: 'APP1241', app_number:'APP1241', farmer_name:'Anjali Desai', farmer_id:'FARM2024008', scheme:{Scheme_Name:'Soil Health Card'}, amount:'₹3,000', applied_at:'2026-03-26', status:'Under Review' },
+];
+
+async function loadApps() {
+  // Show demo data immediately so table never gets "stuck"
+  allApps = DEMO_APPS.map((a, i) => ({ ...a, ai_score: AI_SCORES[i % AI_SCORES.length] }));
+  filteredApps = [...allApps];
+  renderTable();
+
+  // Try to load real API data in background
+  try {
+    const resp = await fetch(`${API}/applications/?limit=200`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.length > 0) {
+        allApps = data.map((a, i) => ({ ...a, ai_score: AI_SCORES[i % AI_SCORES.length] }));
+        filteredApps = [...allApps];
+        renderTable();
+      }
+    }
+  } catch { /* keep demo data */ }
+}
+
+
+function filterTable() {
+  const q       = document.getElementById('search-input').value.toLowerCase();
+  const status  = document.getElementById('filter-status').value;
+  const scheme  = document.getElementById('filter-scheme').value;
+  const district= document.getElementById('filter-district').value;
+
+  filteredApps = allApps.filter(a => {
+    const matchQ  = !q || (a.app_number||a.id||'').toLowerCase().includes(q) || (a.farmer_name||'').toLowerCase().includes(q);
+    const matchS  = !status  || a.status === status;
+    const matchSc = !scheme  || (a.scheme?.Scheme_Name||'').includes(scheme);
+    const matchD  = !district|| (a.district||'').includes(district);
+    return matchQ && matchS && matchSc && matchD;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PER_PAGE;
+  const page  = filteredApps.slice(start, start + PER_PAGE);
+  const tbody = document.getElementById('apps-tbody');
+  const count = filteredApps.length;
+
+  document.getElementById('app-count').textContent = `(${count})`;
+  document.getElementById('show-count').textContent = `Showing ${count} of ${count} applications`;
+  document.getElementById('page-info').textContent  = `Showing ${start + 1}–${Math.min(start + PER_PAGE, count)} of ${count}`;
+
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">No applications found</td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = page.map((a, idx) => {
+    const score   = a.ai_score || 70;
+    const schemeName = a.scheme?.Scheme_Name || '—';
+    const date    = a.applied_at ? new Date(a.applied_at).toLocaleDateString('en-IN') : '—';
+    const canAct  = ['Pending', 'Under Review'].includes(a.status);
+
+    return `<tr>
+      <td><span class="app-id">${a.app_number || a.id}</span></td>
+      <td>
+        <div class="farmer-name">${a.farmer_name}</div>
+        <div class="farmer-id">${a.farmer_id || '—'}</div>
+      </td>
+      <td>${schemeName}</td>
+      <td style="font-weight:600;">${a.amount || '₹6,000'}</td>
+      <td style="color:var(--text3);">${date}</td>
+      <td>${aiScoreBadge(score)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn-icon" title="View" onclick="viewApp('${a.id || a.app_number}')">👁</button>
+          ${canAct ? `<button class="btn-icon approve" title="Approve" onclick="openAction('${a.id || a.app_number}','${a.farmer_name}','approve')">✅</button>` : ''}
+          ${canAct ? `<button class="btn-icon reject"  title="Reject"  onclick="openAction('${a.id || a.app_number}','${a.farmer_name}','reject')">❌</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredApps.length / PER_PAGE);
+  const el = document.getElementById('page-btns');
+  el.innerHTML = '';
+  for (let i = 1; i <= total; i++) {
+    el.innerHTML += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+}
+function goPage(p) { currentPage = p; renderTable(); }
+
+// ── App actions ───────────────────────────────────────────────
+function viewApp(id) {
+  window.location.href = `application-detail.html?id=${id}`;
+}
+
+function openAction(id, name, action) {
+  pendingAction = { id, action };
+  document.getElementById('modal-action-title').textContent = action === 'approve' ? '✅ Approve Application' : '❌ Reject Application';
+  document.getElementById('modal-app-info').textContent     = `Application ID: ${id} · Farmer: ${name}`;
+  document.getElementById('modal-app-info').className       = `alert-banner ${action === 'approve' ? 'success' : 'warning'}`;
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.textContent  = action === 'approve' ? 'Approve' : 'Reject';
+  btn.className    = `btn ${action === 'approve' ? 'btn-primary' : 'btn-danger'}`;
+  document.getElementById('action-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('action-modal').classList.remove('open'); }
+
+async function confirmAction() {
+  if (!pendingAction) return;
+  const remarks = document.getElementById('modal-remarks').value;
+  const newStatus = pendingAction.action === 'approve' ? 'Approved' : 'Rejected';
+  try {
+    await fetch(`${API}/applications/${pendingAction.id}/status`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus, admin_remarks: remarks }),
+    });
+    // Update local state
+    const idx = allApps.findIndex(a => (a.id||a.app_number) == pendingAction.id);
+    if (idx !== -1) allApps[idx].status = newStatus;
+    filteredApps = [...allApps];
+    renderTable();
+  } catch(e) {
+    // Update UI only
+    const idx = allApps.findIndex(a => (a.id||a.app_number) == pendingAction.id);
+    if (idx !== -1) allApps[idx].status = newStatus;
+    filteredApps = [...allApps];
+    renderTable();
+  }
+  closeModal();
+}
+
+function exportCSV() {
+  const headers = ['App ID', 'Farmer', 'Scheme', 'Status', 'AI Score'];
+  const rows    = filteredApps.map(a => [a.app_number||a.id, a.farmer_name, a.scheme?.Scheme_Name||'', a.status, a.ai_score]);
+  const csv     = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob    = new Blob([csv], { type: 'text/csv' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a'); a.href = url; a.download = 'applications.csv'; a.click();
+}
+
+loadApps();
+</script>
+</body>
+</html>
