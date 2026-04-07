@@ -35,16 +35,20 @@ load_dotenv()
 
 # ─────────────────────────────────────────────────────────────
 def _url(user, pw, host, port, dbname):
-    # Map the previous pg db names to sqlite files
-    sqlite_db_name = f"{dbname}.sqlite"
-    # Ensure the sql directory exists
-    os.makedirs("./sql", exist_ok=True)
-    return f"sqlite:///./sql/{sqlite_db_name}"
+    # If a global DATABASE_URL is provided (like on Render), use it for everything
+    render_url = os.getenv("DATABASE_URL")
+    if render_url:
+        # Render sometimes provides 'postgres://', SQLAlchemy needs 'postgresql://'
+        if render_url.startswith("postgres://"):
+            render_url = render_url.replace("postgres://", "postgresql://", 1)
+        return render_url
 
-# SQLite specific arguments
+    # Otherwise fallback to local PostgreSQL credentials
+    return f"postgresql://{user}:{pw}@{host}:{port}/{dbname}"
+
+# Postgres specific arguments
 engine_kwargs = {
-    "pool_pre_ping": True,
-    "connect_args": {"check_same_thread": False}
+    "pool_pre_ping": True
 }
 
 

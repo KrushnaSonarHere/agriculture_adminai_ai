@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { loginUser } from '../api/auth';
 
 const loginStyles = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -82,24 +81,46 @@ export default function Login() {
     if (!credential) return setError('Please enter your email or mobile number.');
     if (!password)   return setError('Please enter your password.');
     setLoading(true);
-    try {
-      const res  = await loginUser(credential, password);
-      const user = res.data;
-      if (role === 'admin'  && user.role !== 'admin')  throw new Error('This account does not have admin privileges.');
-      if (role === 'farmer' && user.role !== 'farmer') throw new Error('Please use the Government Officer login for admin accounts.');
-      login(user);
-      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
-        setError('Cannot reach the server. Make sure FastAPI backend is running on port 8000.');
-      } else {
-        setError(detail || err.message || 'Login failed. Please check your credentials.');
+    
+    setTimeout(() => {
+      try {
+        let user = null;
+        if (credential === 'ramesh2@farm.in' && password === 'farmer123') {
+          user = {
+            id: 'mock-farmer-id',
+            farmer_id: 'F-1001',
+            full_name: 'Ramesh Patel',
+            email: 'ramesh2@farm.in',
+            mobile: '9876543210',
+            district: 'Nashik',
+            role: 'farmer',
+            profile_complete: true
+          };
+        } else if (credential === 'admin@agriportal.gov.in' && password === 'admin123') {
+          user = {
+            id: 'mock-admin-id',
+            full_name: 'Admin Officer',
+            email: 'admin@agriportal.gov.in',
+            role: 'admin',
+            profile_complete: true
+          };
+        }
+
+        if (!user) throw new Error('Login failed. Please check your credentials.');
+
+        if (role === 'admin'  && user.role !== 'admin')  throw new Error('This account does not have admin privileges.');
+        if (role === 'farmer' && user.role !== 'farmer') throw new Error('Please use the Government Officer login for admin accounts.');
+        
+        login(user);
+        navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+      } catch (err) {
+        setError(err.message || 'Login failed. Please check your credentials.');
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
+    }, 600);
   };
+
 
   return (
     <>
